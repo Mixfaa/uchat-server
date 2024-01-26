@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import ua.mezik.socketchat.messages.requests.Heartbeat
+import ua.mezik.socketchat.messages.requests.SerializedTransaction
 import ua.mezik.socketchat.messages.requests.TransactionBase
 import ua.mezik.socketchat.messages.requests.TransactionType
 
-typealias SerializedTransaction = ByteArray
 
 object Utils {
     fun splitJsons(string: String): List<String> {

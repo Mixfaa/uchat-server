@@ -5,9 +5,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import ua.mezik.socketchat.SerializedTransaction
 import ua.mezik.socketchat.Transactions
 import ua.mezik.socketchat.Utils
+import ua.mezik.socketchat.messages.requests.SerializedTransaction
 import ua.mezik.socketchat.messages.requests.TransactionBase
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean

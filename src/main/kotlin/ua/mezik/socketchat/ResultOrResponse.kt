@@ -1,5 +1,6 @@
 package ua.mezik.socketchat
 
+import ua.mezik.socketchat.messages.requests.SerializedTransaction
 import ua.mezik.socketchat.messages.requests.TransactionType
 
 abstract class ResultOrResponse<T> {

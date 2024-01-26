@@ -8,6 +8,8 @@ import ua.mezik.socketchat.messages.TransactionTypeIdResolver
 import ua.mezik.socketchat.messages.responses.*
 import kotlin.reflect.KClass
 
+typealias SerializedTransaction = ByteArray
+
 enum class TransactionType(val transactionClass: KClass<*>) {
     STATUS_RESPONSE(StatusResponse::class),
     HEARTBEAT(Heartbeat::class),

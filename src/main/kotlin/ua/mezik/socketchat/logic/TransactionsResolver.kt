@@ -1,7 +1,6 @@
 package ua.mezik.socketchat.logic
 
 import org.springframework.stereotype.Service
-import ua.mezik.socketchat.SerializedTransaction
 import ua.mezik.socketchat.Transactions
 import ua.mezik.socketchat.logic.services.AccountsService
 import ua.mezik.socketchat.logic.services.ChatService

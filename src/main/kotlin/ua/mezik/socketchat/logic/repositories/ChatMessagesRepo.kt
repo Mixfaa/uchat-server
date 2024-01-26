@@ -8,8 +8,7 @@ import org.springframework.stereotype.Repository
 import ua.mezik.socketchat.models.Chat
 
 @Repository
-interface ChatMessagesRepo : JpaRepository<ChatMessage, Long>
-{
+interface ChatMessagesRepo : JpaRepository<ChatMessage, Long> {
     fun findAllByChat(chat: Chat, pageable: Pageable) : Page<ChatMessage>
     fun deleteAllByChat(chat: Chat)
 }
