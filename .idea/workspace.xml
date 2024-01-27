@@ -34,41 +34,42 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.Build uchat-server.executor": "Run",
-    "Gradle.Download Sources.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "Spring Boot.SocketChat.executor": "Run",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/mishu/programming_projects/java_kotlin/uchat-server",
-    "settings.editor.selected.configurable": "preferences.keymap"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Build uchat-server.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Download Sources.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;Spring Boot.SocketChat.executor&quot;: &quot;Run&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/mishu/programming_projects/java_kotlin/uchat-server&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\mishu\programming_projects\java_kotlin\uchat-server\src\main\kotlin\ua\mezik\socketchat" />
       <recent name="C:\Users\mishu\programming_projects\java_kotlin\uchat-server\src\main\kotlin\ua\mezik\socketchat\misc" />
     </key>
     <key name="MoveKotlinTopLevelDeclarationsDialog.RECENTS_KEY">
+      <recent name="ua.mezik.socketchat.services" />
       <recent name="ua.mezik.socketchat.handling" />
       <recent name="ua.mezik.socketchat.logic.repositories.model" />
       <recent name="ua.mezik.socketchat.logic" />
     </key>
   </component>
   <component name="RunManager">
-    <configuration name="SocketChat" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+    <configuration name="EntypointKt" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <module name="socket_demo.main" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="ua.mezik.socketchat.SocketChat" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="ua.mezik.uchat.EntypointKt" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Spring Boot.SocketChat" />
+        <item itemvalue="Spring Boot.EntypointKt" />
       </list>
     </recent_temporary>
   </component>
