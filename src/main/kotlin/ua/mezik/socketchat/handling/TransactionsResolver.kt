@@ -2,6 +2,7 @@ package ua.mezik.socketchat.handling
 
 import org.springframework.stereotype.Service
 import ua.mezik.socketchat.misc.Transactions
+import ua.mezik.socketchat.misc.foldRight
 import ua.mezik.socketchat.services.AccountsService
 import ua.mezik.socketchat.services.ChatService
 import ua.mezik.socketchat.services.ConnectionsManager
@@ -42,9 +43,9 @@ class TransactionsResolver(
     }
 
     private fun handleLoginRequest(request: LoginRequest, client: ChatClient): SerializedTransaction {
-        return accountsService.handleLogin(request, client).fold({ it }, { account ->
+        return accountsService.handleLogin(request, client).foldRight { account ->
             LoginResponse(account, chatService.getChatIdsByParticipant(account)).serialized
-        })
+        }
     }
 
     private fun fetchAccounts(request: FetchAccountsRequest): TransactionBase = accountsService.fetchAccounts(request)
@@ -67,93 +68,88 @@ class TransactionsResolver(
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.createMessage(request, account)
-            .fold({ it },
-                { message ->
-                    val messageResponse = MessageResponse(
-                        message.id,
-                        account.id,
-                        message.chat.id,
-                        message.timestamp.time,
-                        request.messageType,
-                        request.buffer
-                    )
+            .foldRight { message ->
+                val messageResponse = MessageResponse(
+                    message.id,
+                    account.id,
+                    message.chat.id,
+                    message.timestamp.time,
+                    request.messageType,
+                    request.buffer
+                )
 
-                    connectionsManager.sendTransactionToClientsExcept(
-                        message.chat.participants,
-                        account,
-                        messageResponse
-                    )
+                connectionsManager.sendTransactionToClientsExcept(
+                    message.chat.participants,
+                    account,
+                    messageResponse
+                )
 
-                    messageResponse.serialized
-                })
+                messageResponse.serialized
+            }
     }
 
     private fun handleMessageEdit(request: MessageEditRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.editMessage(request, account)
-            .fold({ it },
-                { editResult ->
+            .foldRight { editResult ->
+                val editMessageResponse = MessageEditResponse.fromMessage(editResult)
 
-                    val editMessageResponse = MessageEditResponse.fromMessage(editResult)
+                connectionsManager.sendTransactionToClientsExcept(
+                    editResult.chat.participants,
+                    account,
+                    editMessageResponse
+                )
 
-                    connectionsManager.sendTransactionToClientsExcept(
-                        editResult.chat.participants,
-                        account,
-                        editMessageResponse
-                    )
-
-                    editMessageResponse.serialized
-                })
+                editMessageResponse.serialized
+            }
     }
 
     private fun deleteMessage(request: MessageDeleteRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.deleteMessage(request, account)
-            .fold({ it },
-                { chat ->
-                    val deleteMessageResponse = MessageDeleteResponse(request.messageId, chat.id)
+            .foldRight { chat ->
+                val deleteMessageResponse = MessageDeleteResponse(request.messageId, chat.id)
 
-                    connectionsManager.sendTransactionToClientsExcept(chat.participants, account, deleteMessageResponse)
+                connectionsManager.sendTransactionToClientsExcept(chat.participants, account, deleteMessageResponse)
 
-                    deleteMessageResponse.serialized
-                })
+                deleteMessageResponse.serialized
+            }
     }
 
     private fun fetchChatMessages(request: FetchChatMessagesRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.fetchChatMessages(request, account)
-            .fold({ it },
-                { messages ->
-                    FetchChatMessagesResponse(
-                        request.chatId, messages.toList().map(MessageResponse::fromMessage)
-                    ).serialized
-                })
+            .foldRight { messages ->
+                FetchChatMessagesResponse(
+                    request.chatId, messages.toList().map(MessageResponse::fromMessage)
+                ).serialized
+            }
     }
 
     private fun fetchChats(request: FetchChatsRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.fetchChats(request, account)
-            .fold({ it }, { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat).toList()).serialized })
+            .foldRight { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat).toList()).serialized }
     }
 
     private fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.fetchChatsByIds(request, account)
-            .fold({ it }, { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat)).serialized })
+            .foldRight { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat)).serialized }
     }
 
     private fun deleteChat(request: DeleteChatRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.deleteChat(request, account)
-            .fold({ it }, { (participants, response) ->
+            .foldRight { (participants, response) ->
                 connectionsManager.sendTransactionToClientsExcept(participants, account, response)
                 response.serialized
-            })
+            }
     }
 }
