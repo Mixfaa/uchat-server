@@ -4,9 +4,10 @@ import arrow.core.left
 import arrow.core.right
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import ua.mezik.socketchat.handling.ChatClient
 import ua.mezik.socketchat.misc.TransactionEither
 import ua.mezik.socketchat.misc.Transactions
-import ua.mezik.socketchat.handling.ClientHandler
+import ua.mezik.socketchat.handling.SocketClient
 import ua.mezik.socketchat.repositories.AccountsRepo
 
 import ua.mezik.socketchat.model.Account
@@ -40,7 +41,7 @@ class AccountsService(
         )
     }
 
-    fun handleLogin(request: LoginRequest, client: ClientHandler): TransactionEither<Account> {
+    fun handleLogin(request: LoginRequest, client: ChatClient): TransactionEither<Account> {
         var account = accountsRepo.findByUsername(request.username)
 
         if (account == null) {

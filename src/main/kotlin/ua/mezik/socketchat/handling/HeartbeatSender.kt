@@ -9,24 +9,24 @@ import ua.mezik.socketchat.misc.Transactions
  */
 @Service
 class HeartbeatSender {
-    private val heartbeatReceivers: MutableMap<ClientHandler, (Exception) -> Unit> = mutableMapOf()
+    private val heartbeatReceivers: MutableMap<ChatClient, (Exception) -> Unit> = mutableMapOf()
 
     @Scheduled(fixedRate = 15000)
     private fun broadcastHeartbeat() {
         for ((client, fallback) in heartbeatReceivers) {
             try {
-                client.sendToSocket(Transactions.serializedHeartbeat)
+                client.sendToClient(Transactions.serializedHeartbeat)
             } catch (ex: Exception) {
                 fallback(ex)
             }
         }
     }
 
-    fun addReceiver(clientHandler: ClientHandler, fallback: (Exception) -> Unit) {
-        heartbeatReceivers[clientHandler] = fallback
+    fun addReceiver(client: ChatClient, fallback: (Exception) -> Unit) {
+        heartbeatReceivers[client] = fallback
     }
 
-    fun removeReceiver(clientHandler: ClientHandler) {
-        heartbeatReceivers.remove(clientHandler)
+    fun removeReceiver(client: ChatClient) {
+        heartbeatReceivers.remove(client)
     }
 }

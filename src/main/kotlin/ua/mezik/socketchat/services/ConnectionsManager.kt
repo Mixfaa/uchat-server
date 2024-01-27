@@ -1,17 +1,19 @@
 package ua.mezik.socketchat.services
 
 import org.springframework.stereotype.Service
-import ua.mezik.socketchat.handling.ClientHandler
+import ua.mezik.socketchat.handling.ChatClient
+import ua.mezik.socketchat.handling.SocketClient
 import ua.mezik.socketchat.model.PersistedConnection
 import ua.mezik.socketchat.model.message.requests.TransactionBase
 import ua.mezik.socketchat.model.Account
+import ua.mezik.socketchat.model.Chat
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Service
 class ConnectionsManager {
     private val persistedUsers: MutableList<PersistedConnection> = CopyOnWriteArrayList()
 
-    fun persistConnectionFrom(account: Account, client: ClientHandler) {
+    fun persistConnectionFrom(account: Account, client: ChatClient) {
         val persistedConnection = persistedConnectionByAccount(account)
 
         if (persistedConnection == null)
@@ -24,15 +26,15 @@ class ConnectionsManager {
         return persistedUsers.firstOrNull { it.account == account }
     }
 
-    private fun addPersistedConnection(account: Account, clientHandler: ClientHandler) {
-        persistedUsers.add(PersistedConnection(account, mutableListOf(clientHandler)))
+    private fun addPersistedConnection(account: Account, chat: ChatClient) {
+        persistedUsers.add(PersistedConnection(account, mutableListOf(chat)))
     }
 
-    fun accountFromClient(client: ClientHandler): Account? {
+    fun accountFromClient(client: ChatClient): Account? {
         return persistedUsers.firstOrNull { it.clients.contains(client) }?.account
     }
 
-    fun clientDisconnected(client: ClientHandler) {
+    fun clientDisconnected(client: ChatClient) {
         val persistedConnection = persistedUsers.firstOrNull { it.clients.contains(client) } ?: return
         persistedConnection.clients.remove(client)
     }
@@ -53,7 +55,7 @@ class ConnectionsManager {
         val clients = persistedUsers.firstOrNull { it.account == account }?.clients
             ?: return false
 
-        clients.forEach { it.sendToSocket(transaction) }
+        clients.forEach { it.sendToClient(transaction) }
         return true
     }
 }

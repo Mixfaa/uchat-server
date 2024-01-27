@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import ua.mezik.socketchat.misc.Transactions
 import ua.mezik.socketchat.misc.Utils
 import ua.mezik.socketchat.model.message.requests.SerializedTransaction
 import ua.mezik.socketchat.model.message.requests.TransactionBase
@@ -14,21 +13,20 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private val coroutineContext: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
-class ClientHandler(
+class SocketClient(
     private val clientSocket: Socket,
     private val heartbeatSender: HeartbeatSender,
     private val transactionsResolver: TransactionsResolver,
-) {
+) : ChatClient{
     private var isConnected = AtomicBoolean(true)
 
-    fun sendToSocket(transaction: TransactionBase) {
+    override fun sendToClient(transaction: TransactionBase) {
         if (clientSocket.isClosed) return
         clientSocket.getOutputStream().write(transaction.serialized)
     }
-
-    fun sendToSocket(serialized: SerializedTransaction) {
+    override fun sendToClient(serializedTransaction: SerializedTransaction) {
         if (clientSocket.isClosed) return
-        clientSocket.getOutputStream().write(serialized)
+        clientSocket.getOutputStream().write(serializedTransaction)
     }
 
     private fun heartbeatFallback(ex: Exception) {
@@ -60,10 +58,10 @@ class ClientHandler(
                         val probablyRequest = Utils.jsonMapper.readValue<TransactionBase>(json)
                         println(probablyRequest)
 
-                        val response = transactionsResolver.handleRequest(probablyRequest, this@ClientHandler)
+                        val response = transactionsResolver.handleRequest(probablyRequest, this@SocketClient)
                             ?: continue
 
-                        sendToSocket(response)
+                        sendToClient(response)
                     }
                 } catch (ex: Exception) {
                     ex.printStackTrace()

@@ -15,12 +15,12 @@ class TransactionsResolver(
     private val chatService: ChatService,
     private val connectionsManager: ConnectionsManager,
 ) {
-    fun clientDisconnected(client: ClientHandler) = connectionsManager.clientDisconnected(client)
+    fun clientDisconnected(client: ChatClient) = connectionsManager.clientDisconnected(client)
 
-    fun handleRequest(request: TransactionBase, clientHandler: ClientHandler): SerializedTransaction? {
-        if (request is LoginRequest) return handleLoginRequest(request, clientHandler)
+    fun handleRequest(request: TransactionBase, client: ChatClient): SerializedTransaction? {
+        if (request is LoginRequest) return handleLoginRequest(request, client)
 
-        val account = connectionsManager.accountFromClient(clientHandler)
+        val account = connectionsManager.accountFromClient(client)
 
         return when (request) {
             is CreateChatRequest -> createChat(request, account)
@@ -41,7 +41,7 @@ class TransactionsResolver(
         }
     }
 
-    private fun handleLoginRequest(request: LoginRequest, client: ClientHandler): SerializedTransaction {
+    private fun handleLoginRequest(request: LoginRequest, client: ChatClient): SerializedTransaction {
         return accountsService.handleLogin(request, client).fold({ it }, { account ->
             LoginResponse(account, chatService.getChatIdsByParticipant(account)).serialized
         })

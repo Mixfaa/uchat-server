@@ -8,19 +8,20 @@ import java.net.ServerSocket
 @Service
 class SocketServer(
     @Value("socket.ip4") private val inetAddress: String,
-    @Value("socket.backlog") private val backlog:Int,
-    @Value("socket.port") private val port:Int,
-    private val transactionsResolver: TransactionsResolver
+    @Value("socket.backlog") private val backlog: Int,
+    @Value("socket.port") private val port: Int,
+    private val transactionsResolver: TransactionsResolver,
+    private val heartbeatSender: HeartbeatSender
 ) {
     private var socketAcceptingThread: Thread = Thread(this::acceptSockets).also { it.start() }
- 
+
     private fun acceptSockets() {
         println("Socket is listening...")
         val socket = ServerSocket(port, backlog, InetAddress.getByName(inetAddress))
         while (socketAcceptingThread.isInterrupted) {
             val client = socket.accept()
-            val handler = ClientHandler(client, transactionsResolver)
-            handler.handleAsync()
+
+            SocketClient(client, heartbeatSender, transactionsResolver).handleAsync()
         }
     }
 }
