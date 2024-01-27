@@ -34,7 +34,7 @@ open class ChatService(
     @Transactional
     open fun createChat(chatName: String, participantsIds: List<Long>?, account: Account): Chat {
 
-        val participants = ArrayList<Account>()
+        val participants = mutableListOf<Account>()
         if (participantsIds != null)
             participants.addAll(accountsService.findAccountsByIds(participantsIds))
 
@@ -62,11 +62,11 @@ open class ChatService(
             targetChat.firstMessageId = chatMessage.id
             chatsRepo.save(targetChat)
 
-            val chatUpdateResponse = ChatResponse.fromChat(targetChat)
+            val chatUpdateResponse = ChatResponse(targetChat)
             connectionsManager.sendTransactionToClients(targetChat.participants, chatUpdateResponse)
         }
 
-        return Either.Right(chatMessage)
+        return chatMessage.right()
     }
 
     @Transactional
@@ -93,7 +93,7 @@ open class ChatService(
     open fun deleteMessage(request: MessageDeleteRequest, account: Account): TransactionEither<Chat> {
         val message =
             messagesRepo.findByIdOrNull(request.messageId)
-                ?: return Either.Left(Transactions.notFound(request.type))
+                ?: return Transactions.notFound(request.type).left()
 
         if (message.owner != account) return Transactions.accessDenied(request.type).left()
 
@@ -102,7 +102,6 @@ open class ChatService(
 
         return chat.right()
     }
-
 
     open fun fetchChats(request: FetchChatsRequest, account: Account): TransactionEither<Page<Chat>> {
         return Either.catch {
@@ -135,7 +134,6 @@ open class ChatService(
     open fun deleteChat(
         request: DeleteChatRequest, account: Account
     ): TransactionEither<Pair<List<Account>, DeleteChatResponse>> {
-
         val chat = chatsRepo.findByIdOrNull(request.chatId)
             ?: return Transactions.notFound(request.type).left()
 
@@ -152,12 +150,6 @@ open class ChatService(
 
     open fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account): TransactionEither<Iterable<Chat>> =
         chatsRepo.findAllByIdAndParticipantsContaining(request.chatsIds, account).right()
-
-    open fun getMessageOrNull(messageId: Long): ChatMessage? =
-        messagesRepo.findByIdOrNull(messageId)
-
-    open fun getChatOrNull(chatId: Long): Chat? =
-        chatsRepo.findByIdOrNull(chatId)
 
     open fun getChatIdsByParticipant(account: Account): List<Long> =
         chatsRepo.findAllIdsByOwnerId(account)

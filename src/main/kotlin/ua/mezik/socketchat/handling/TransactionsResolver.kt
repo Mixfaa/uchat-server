@@ -57,7 +57,7 @@ class TransactionsResolver(
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         val chat = chatService.createChat(request.chatName, request.participantsIds, account)
-        val chatResponse = ChatResponse.fromChat(chat)
+        val chatResponse = ChatResponse(chat)
 
         connectionsManager.sendTransactionToClientsExcept(chat.participants, account, chatResponse)
 
@@ -93,7 +93,7 @@ class TransactionsResolver(
 
         return chatService.editMessage(request, account)
             .foldRight { editResult ->
-                val editMessageResponse = MessageEditResponse.fromMessage(editResult)
+                val editMessageResponse = MessageEditResponse(editResult)
 
                 connectionsManager.sendTransactionToClientsExcept(
                     editResult.chat.participants,
@@ -124,7 +124,7 @@ class TransactionsResolver(
         return chatService.fetchChatMessages(request, account)
             .foldRight { messages ->
                 FetchChatMessagesResponse(
-                    request.chatId, messages.toList().map(MessageResponse::fromMessage)
+                    request.chatId, messages.toList().map(::MessageResponse)
                 ).serialized
             }
     }
@@ -133,14 +133,14 @@ class TransactionsResolver(
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.fetchChats(request, account)
-            .foldRight { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat).toList()).serialized }
+            .foldRight { chats -> FetchChatsResponse(chats.map(::ChatResponse).toList()).serialized }
     }
 
     private fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
         return chatService.fetchChatsByIds(request, account)
-            .foldRight { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat)).serialized }
+            .foldRight { chats -> FetchChatsResponse(chats.map(::ChatResponse)).serialized }
     }
 
     private fun deleteChat(request: DeleteChatRequest, account: Account?): SerializedTransaction {

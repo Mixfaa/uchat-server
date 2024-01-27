@@ -12,15 +12,11 @@ data class ChatResponse(
     @field:JsonProperty("participants_ids") val participants: List<Long>,
     @field:JsonProperty("first_message_id") val firstMessageId: Long
 ) : TransactionBase() {
-    companion object {
-        fun fromChat(chat: Chat): ChatResponse {
-            return ChatResponse(
-                chat.name,
-                chat.id,
-                chat.owner.id,
-                chat.participants.map(Account::getId),
-                chat.firstMessageId
-            )
-        }
-    }
+    constructor(chat: Chat) : this(
+        chat.name,
+        chat.id,
+        chat.owner.id,
+        chat.participants.map(Account::getId),
+        chat.firstMessageId
+    )
 }

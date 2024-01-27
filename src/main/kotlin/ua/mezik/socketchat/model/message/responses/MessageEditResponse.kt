@@ -9,9 +9,5 @@ data class MessageEditResponse(
     @field:JsonProperty("chat_id") val chatId: Long,
     @field:JsonProperty("new_buffer") val newBuffer: String
 ) : TransactionBase() {
-    companion object {
-        fun fromMessage(message: TextMessage): MessageEditResponse {
-            return MessageEditResponse(message.id, message.chat.id, message.text)
-        }
-    }
+    constructor(message: TextMessage) : this(message.id, message.chat.id, message.text)
 }

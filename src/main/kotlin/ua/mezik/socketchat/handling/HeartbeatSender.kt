@@ -1,6 +1,5 @@
 package ua.mezik.socketchat.handling
 
-import arrow.core.Either
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import ua.mezik.socketchat.misc.Transactions
