@@ -1,0 +1,1 @@
+Designed for C client, so, it is simple and not reactive  

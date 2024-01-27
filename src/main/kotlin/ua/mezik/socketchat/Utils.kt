@@ -26,7 +26,6 @@ object Utils {
 }
 
 object Transactions {
-    private val statusResponseProps = HashMap<String, Any>()
     val serializedHeartbeat = Utils.serializeTransaction(Heartbeat())
 
     fun userNotAuthenticated(responseFor: TransactionType): SerializedTransaction =
@@ -36,6 +35,8 @@ object Transactions {
         serializeStatusResponse("Access denied", responseFor, true)
 
     fun serializeStatusResponse(msg: String, respFor: TransactionType, fail: Boolean): SerializedTransaction {
+        val statusResponseProps = HashMap<String, Any>()
+
         statusResponseProps["responseFor"] = respFor
         statusResponseProps["message"] = msg
         statusResponseProps["fail"] = fail

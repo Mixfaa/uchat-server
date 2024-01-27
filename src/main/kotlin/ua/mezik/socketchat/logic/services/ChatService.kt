@@ -48,6 +48,7 @@ open class ChatService(
         val targetChat = chatsRepo.findByIdOrNull(request.chatId)
             ?: return ResultOrResponse.failure("Chat not found", request.type)
 
+        // maybe I should use some factory, but 3 lines of code
         val chatMessage: ChatMessage = when (request.messageType) {
             MessageType.TEXT -> TextMessage(account, targetChat, request.messageType, request.buffer)
             MessageType.FILE -> FileMessage(account, targetChat, request.messageType, request.buffer)

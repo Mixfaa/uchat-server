@@ -15,7 +15,6 @@ import ua.mezik.socketchat.models.Account
 @Service
 class AccountsService(
     private val accountsRepo: AccountsRepo,
-    private val chatsRepo: ChatsRepo,
     private val persistenceManager: ConnectionsManager
 ) {
     fun findAccountsByIds(ids: List<Long>): MutableList<Account> {
@@ -55,7 +54,7 @@ class AccountsService(
         val persistedConnection = persistenceManager.persistedConnectionByAccount(account)
 
         return if (persistedConnection != null) {
-            println("login message from logined user")
+            // login message from logined user
             persistedConnection.clients.add(client)
             ResultOrResponse.success(account)
         } else {
