@@ -37,7 +37,7 @@ class TransactionsResolver(
             is FetchAccountsRequest -> fetchAccounts(request).serialized
             is FetchAccountsByIdsRequest -> fetchAccountsByIds(request).serialized
 
-            else -> StatusResponse("cant handle your request", TransactionType.fromTransactionClass(request)).serialized
+            else -> StatusResponse("cant handle your request", request.type).serialized
         }
     }
 

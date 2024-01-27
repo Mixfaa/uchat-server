@@ -12,10 +12,12 @@ import ua.mezik.socketchat.model.message.requests.TransactionBase
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
+private val coroutineContext: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
 class ClientHandler(
     private val clientSocket: Socket,
+    private val heartbeatSender: HeartbeatSender,
     private val transactionsResolver: TransactionsResolver,
-    private val coroutineContext: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 ) {
     private var isConnected = AtomicBoolean(true)
 
@@ -29,24 +31,17 @@ class ClientHandler(
         clientSocket.getOutputStream().write(serialized)
     }
 
-    private fun sendHeartbeat() {
-        try {
-            clientSocket.getOutputStream().write(Transactions.serializedHeartbeat)
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            isConnected.set(false)
-            transactionsResolver.clientDisconnected(this)
-            clientSocket.close()
-        }
+    private fun heartbeatFallback(ex: Exception) {
+        isConnected.set(false)
+        transactionsResolver.clientDisconnected(this)
+        clientSocket.close()
+
+        heartbeatSender.removeReceiver(this)
     }
 
     fun handleAsync() {
-        coroutineContext.launch {
-            while (isConnected.get()) {
-                Thread.sleep(15000)
-                sendHeartbeat()
-            }
-        }
+        heartbeatSender.addReceiver(this, ::heartbeatFallback)
+
         coroutineContext.launch {
             val inputStream = clientSocket.getInputStream()
             while (isConnected.get()) {

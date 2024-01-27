@@ -12,12 +12,8 @@ class SocketServer(
     @Value("socket.port") private val port:Int,
     private val transactionsResolver: TransactionsResolver
 ) {
-    private var socketAcceptingThread: Thread = Thread(this::acceptSockets)
-
-    init {
-        socketAcceptingThread.start()
-    }
-
+    private var socketAcceptingThread: Thread = Thread(this::acceptSockets).also { it.start() }
+ 
     private fun acceptSockets() {
         println("Socket is listening...")
         val socket = ServerSocket(port, backlog, InetAddress.getByName(inetAddress))
