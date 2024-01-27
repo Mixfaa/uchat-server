@@ -28,6 +28,9 @@ object Utils {
 object Transactions {
     val serializedHeartbeat = Utils.serializeTransaction(Heartbeat())
 
+    fun notFound(responseFor: TransactionType): SerializedTransaction =
+        serializeStatusResponse("Not found", responseFor, true)
+
     fun userNotAuthenticated(responseFor: TransactionType): SerializedTransaction =
         serializeStatusResponse("User not authenticated", responseFor, true)
 

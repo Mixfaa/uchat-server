@@ -1,12 +1,14 @@
 package ua.mezik.socketchat.logic.services
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ua.mezik.socketchat.ResultOrResponse
 import ua.mezik.socketchat.logic.repositories.ChatMessagesRepo
 import ua.mezik.socketchat.logic.repositories.ChatsRepo
 import ua.mezik.socketchat.messages.requests.*
@@ -18,6 +20,8 @@ import ua.mezik.socketchat.models.ChatMessage
 import ua.mezik.socketchat.models.MessageType
 import ua.mezik.socketchat.models.messages.FileMessage
 import ua.mezik.socketchat.models.messages.TextMessage
+import ua.mezik.socketchat.TransactionEither
+import ua.mezik.socketchat.Transactions
 
 
 @Service
@@ -44,9 +48,9 @@ open class ChatService(
     }
 
     @Transactional
-    open fun createMessage(request: MessageRequest, account: Account): ResultOrResponse<ChatMessage> {
+    open fun createMessage(request: MessageRequest, account: Account): TransactionEither<ChatMessage> {
         val targetChat = chatsRepo.findByIdOrNull(request.chatId)
-            ?: return ResultOrResponse.failure("Chat not found", request.type)
+            ?: return Transactions.notFound(request.type).left()
 
         // maybe I should use some factory, but 3 lines of code
         val chatMessage: ChatMessage = when (request.messageType) {
@@ -63,60 +67,61 @@ open class ChatService(
             connectionsManager.sendTransactionToClients(targetChat.participants, chatUpdateResponse)
         }
 
-        return ResultOrResponse.success(chatMessage)
+        return Either.Right(chatMessage)
     }
 
     @Transactional
-    open fun editMessage(request: MessageEditRequest, account: Account): ResultOrResponse<TextMessage> {
+    open fun editMessage(request: MessageEditRequest, account: Account): TransactionEither<TextMessage> {
 
         val message =
             messagesRepo.findByIdOrNull(request.messageId)
-                ?: return ResultOrResponse.failure("Message ${request.messageId} not found", request.type)
+                ?: return Transactions.notFound(request.type).left()
 
-        if (message.owner != account) return ResultOrResponse.accessDenied(request.type)
+        if (message.owner != account) return Transactions.accessDenied(request.type).left()
 
         if (message.type != MessageType.TEXT || message !is TextMessage)
-            return ResultOrResponse.failure("Message not editable", request.type)
+            return Transactions.serializeStatusResponse("Message not editable", request.type, true).left()
 
         message.text = request.buffer
         message.isEdited = true
 
         messagesRepo.save(message)
 
-        return ResultOrResponse.success(message)
+        return message.right()
     }
 
     @Transactional
-    open fun deleteMessage(request: MessageDeleteRequest, account: Account): ResultOrResponse<Chat> {
+    open fun deleteMessage(request: MessageDeleteRequest, account: Account): TransactionEither<Chat> {
         val message =
             messagesRepo.findByIdOrNull(request.messageId)
-                ?: return ResultOrResponse.failure("Message not found", request.type)
+                ?: return Either.Left(Transactions.notFound(request.type))
 
-        if (message.owner != account) return ResultOrResponse.accessDenied(request.type)
+        if (message.owner != account) return Transactions.accessDenied(request.type).left()
 
         val chat = message.chat
         messagesRepo.delete(message)
 
-        return ResultOrResponse.success(chat)
+        return chat.right()
     }
 
 
-    open fun fetchChats(request: FetchChatsRequest, account: Account): ResultOrResponse<Page<Chat>> {
-        val chats =
+    open fun fetchChats(request: FetchChatsRequest, account: Account): TransactionEither<Page<Chat>> {
+        return Either.catch {
             chatsRepo.findAllByParticipantsContaining(account, PageRequest.of(request.page, request.limit))
-        return ResultOrResponse.success(chats)
+        }
+            .mapLeft { Transactions.serializeStatusResponse(it.localizedMessage, request.type, true) }
     }
 
     open fun fetchChatMessages(
         request: FetchChatMessagesRequest,
         account: Account
-    ): ResultOrResponse<Page<ChatMessage>> {
+    ): TransactionEither<Page<ChatMessage>> {
 
         val chat = chatsRepo.findByIdOrNull(request.chatId)
-            ?: return ResultOrResponse.chatNotFound(request.type)
+            ?: return Transactions.notFound(request.type).left()
 
         if (!chat.participants.contains(account))
-            return ResultOrResponse.accessDenied(request.type)
+            return Transactions.accessDenied(request.type).left()
 
         val messages =
             messagesRepo.findAllByChat(
@@ -124,18 +129,18 @@ open class ChatService(
                 PageRequest.of(request.page, request.limit).withSort(Sort.by("timestamp").reverse())
             )
 
-        return ResultOrResponse.success(messages)
+        return messages.right()
     }
 
     @Transactional
     open fun deleteChat(
         request: DeleteChatRequest, account: Account
-    ): ResultOrResponse<Pair<List<Account>, DeleteChatResponse>> {
+    ): TransactionEither<Pair<List<Account>, DeleteChatResponse>> {
 
         val chat = chatsRepo.findByIdOrNull(request.chatId)
-            ?: return ResultOrResponse.chatNotFound(request.type)
+            ?: return Transactions.notFound(request.type).left()
 
-        if (chat.owner != account) return ResultOrResponse.accessDenied(request.type)
+        if (chat.owner != account) return Transactions.accessDenied(request.type).left()
 
         val chatId = chat.id
         val participants = chat.participants
@@ -143,24 +148,19 @@ open class ChatService(
         messagesRepo.deleteAllByChat(chat)
         chatsRepo.delete(chat)
 
-        return ResultOrResponse.success(Pair(participants, DeleteChatResponse(chatId)))
+        return (participants to DeleteChatResponse(chatId)).right()
     }
 
-    open fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account): ResultOrResponse<Iterable<Chat>> {
-        val chats = chatsRepo.findAllByIdAndParticipantsContaining(request.chatsIds, account)
-        return ResultOrResponse.success(chats)
-    }
+    open fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account): TransactionEither<Iterable<Chat>> =
+        chatsRepo.findAllByIdAndParticipantsContaining(request.chatsIds, account).right()
 
-    open fun getMessageOrNull(messageId: Long): ChatMessage? {
-        return messagesRepo.findByIdOrNull(messageId)
-    }
+    open fun getMessageOrNull(messageId: Long): ChatMessage? =
+        messagesRepo.findByIdOrNull(messageId)
 
-    open fun getChatOrNull(chatId: Long): Chat? {
-        return chatsRepo.findByIdOrNull(chatId)
-    }
+    open fun getChatOrNull(chatId: Long): Chat? =
+        chatsRepo.findByIdOrNull(chatId)
 
-    open fun getChatIdsByParticipant(account: Account): List<Long> {
-        return chatsRepo.findAllIdsByOwnerId(account)
-    }
+    open fun getChatIdsByParticipant(account: Account): List<Long> =
+        chatsRepo.findAllIdsByOwnerId(account)
 
 }

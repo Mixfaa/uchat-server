@@ -18,8 +18,7 @@ class TransactionsResolver(
     fun clientDisconnected(client: ClientHandler) = connectionsManager.clientDisconnected(client)
 
     fun handleRequest(request: TransactionBase, clientHandler: ClientHandler): SerializedTransaction? {
-        if (request is LoginRequest)
-            return handleLoginRequest(request, clientHandler)
+        if (request is LoginRequest) return handleLoginRequest(request, clientHandler)
 
         val account = connectionsManager.accountFromClient(clientHandler)
 
@@ -42,12 +41,10 @@ class TransactionsResolver(
         }
     }
 
-    private fun handleLoginRequest(request: LoginRequest, client: ClientHandler): SerializedTransaction? {
-
-        val (account, failResp) = accountsService.handleLogin(request, client)
-        account ?: return failResp
-
-        return LoginResponse(account, chatService.getChatIdsByParticipant(account)).serialized
+    private fun handleLoginRequest(request: LoginRequest, client: ClientHandler): SerializedTransaction {
+        return accountsService.handleLogin(request, client).fold({ it }, { account ->
+            LoginResponse(account, chatService.getChatIdsByParticipant(account)).serialized
+        })
     }
 
     private fun fetchAccounts(request: FetchAccountsRequest): TransactionBase = accountsService.fetchAccounts(request)
@@ -66,93 +63,97 @@ class TransactionsResolver(
         return chatResponse.serialized
     }
 
-    private fun handleMessageRequest(request: MessageRequest, account: Account?): SerializedTransaction? {
+    private fun handleMessageRequest(request: MessageRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
-        val (message, failResp) = chatService.createMessage(request, account)
-        message ?: return failResp
+        return chatService.createMessage(request, account)
+            .fold({ it },
+                { message ->
+                    val messageResponse = MessageResponse(
+                        message.id,
+                        account.id,
+                        message.chat.id,
+                        message.timestamp.time,
+                        request.messageType,
+                        request.buffer
+                    )
 
-        val messageResponse = MessageResponse(
-            message.id,
-            account.id,
-            message.chat.id,
-            message.timestamp.time,
-            request.messageType,
-            request.buffer
-        )
+                    connectionsManager.sendTransactionToClientsExcept(
+                        message.chat.participants,
+                        account,
+                        messageResponse
+                    )
 
-        connectionsManager.sendTransactionToClientsExcept(message.chat.participants, account, messageResponse)
-
-        return messageResponse.serialized
+                    messageResponse.serialized
+                })
     }
 
-    private fun handleMessageEdit(request: MessageEditRequest, account: Account?): SerializedTransaction? {
+    private fun handleMessageEdit(request: MessageEditRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
+        return chatService.editMessage(request, account)
+            .fold({ it },
+                { editResult ->
 
-        val (editResult, failResp) = chatService.editMessage(request, account)
-        editResult ?: return failResp
+                    val editMessageResponse = MessageEditResponse.fromMessage(editResult)
 
-        val editMessageResponse = MessageEditResponse.fromMessage(editResult)
+                    connectionsManager.sendTransactionToClientsExcept(
+                        editResult.chat.participants,
+                        account,
+                        editMessageResponse
+                    )
 
-        connectionsManager.sendTransactionToClientsExcept(editResult.chat.participants, account, editMessageResponse)
-
-        return editMessageResponse.serialized
+                    editMessageResponse.serialized
+                })
     }
 
-    private fun deleteMessage(request: MessageDeleteRequest, account: Account?): SerializedTransaction? {
+    private fun deleteMessage(request: MessageDeleteRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
-        val (chat, failResp) = chatService.deleteMessage(request, account)
-        chat ?: return failResp
+        return chatService.deleteMessage(request, account)
+            .fold({ it },
+                { chat ->
+                    val deleteMessageResponse = MessageDeleteResponse(request.messageId, chat.id)
 
-        val deleteMessageResponse = MessageDeleteResponse(request.messageId, chat.id)
+                    connectionsManager.sendTransactionToClientsExcept(chat.participants, account, deleteMessageResponse)
 
-        connectionsManager.sendTransactionToClientsExcept(chat.participants, account, deleteMessageResponse)
-
-        return deleteMessageResponse.serialized
+                    deleteMessageResponse.serialized
+                })
     }
 
-    private fun fetchChatMessages(request: FetchChatMessagesRequest, account: Account?): SerializedTransaction? {
+    private fun fetchChatMessages(request: FetchChatMessagesRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
-        val (messages, failResp) = chatService.fetchChatMessages(request, account)
-        messages ?: return failResp
-
-        return FetchChatMessagesResponse(
-            request.chatId,
-            messages.toList().map(MessageResponse::fromMessage)
-        ).serialized
+        return chatService.fetchChatMessages(request, account)
+            .fold({ it },
+                { messages ->
+                    FetchChatMessagesResponse(
+                        request.chatId, messages.toList().map(MessageResponse::fromMessage)
+                    ).serialized
+                })
     }
 
-    private fun fetchChats(request: FetchChatsRequest, account: Account?): SerializedTransaction? {
+    private fun fetchChats(request: FetchChatsRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
-        val (chats, failResp) = chatService.fetchChats(request, account)
-        chats ?: return failResp
-
-        return FetchChatsResponse(chats.map(ChatResponse::fromChat).toList()).serialized
+        return chatService.fetchChats(request, account)
+            .fold({ it }, { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat).toList()).serialized })
     }
 
-    private fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account?): SerializedTransaction? {
+    private fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
-        val (chats, failResp) = chatService.fetchChatsByIds(request, account)
-        chats ?: return failResp
-
-        return FetchChatsResponse(chats.map(ChatResponse::fromChat)).serialized
-
+        return chatService.fetchChatsByIds(request, account)
+            .fold({ it }, { chats -> FetchChatsResponse(chats.map(ChatResponse::fromChat)).serialized })
     }
 
-    private fun deleteChat(request: DeleteChatRequest, account: Account?): SerializedTransaction? {
+    private fun deleteChat(request: DeleteChatRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
 
-        val (pair, failResp) = chatService.deleteChat(request, account)
-        pair ?: return failResp
-
-        val (participants, response) = pair
-
-        connectionsManager.sendTransactionToClientsExcept(participants, account, response)
-        return response.serialized
+        return chatService.deleteChat(request, account)
+            .fold({ it }, { (participants, response) ->
+                connectionsManager.sendTransactionToClientsExcept(participants, account, response)
+                response.serialized
+            })
     }
 }
