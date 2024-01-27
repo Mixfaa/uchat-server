@@ -36,9 +36,20 @@
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/mishu/programming_projects/java_kotlin/uchat-server",
-    "settings.editor.selected.configurable": "preferences.lookFeel"
+    "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\mishu\programming_projects\java_kotlin\uchat-server\src\main\kotlin\ua\mezik\socketchat" />
+      <recent name="C:\Users\mishu\programming_projects\java_kotlin\uchat-server\src\main\kotlin\ua\mezik\socketchat\misc" />
+    </key>
+    <key name="MoveKotlinTopLevelDeclarationsDialog.RECENTS_KEY">
+      <recent name="ua.mezik.socketchat.handling" />
+      <recent name="ua.mezik.socketchat.logic.repositories.model" />
+      <recent name="ua.mezik.socketchat.logic" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="SocketChat" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <module name="socket_demo.main" />
