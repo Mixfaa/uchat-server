@@ -27,7 +27,7 @@ class ConnectionsManager {
         persistedUsers.add(PersistedConnection(account, mutableListOf(chat)))
     }
 
-    fun accountFromClient(client: ChatClient): Account? {
+    fun findClientAccount(client: ChatClient): Account? {
         return persistedUsers.firstOrNull { it.clients.contains(client) }?.account
     }
 

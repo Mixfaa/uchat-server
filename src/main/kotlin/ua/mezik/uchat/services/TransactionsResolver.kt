@@ -16,11 +16,11 @@ class TransactionsResolver(
     fun clientDisconnected(client: ChatClient) = connectionsManager.clientDisconnected(client)
 
     fun handleRequest(request: TransactionBase, client: ChatClient): SerializedTransaction? {
-        if (request is LoginRequest) return handleLoginRequest(request, client)
-
-        val account = connectionsManager.accountFromClient(client)
+        val account = connectionsManager.findClientAccount(client)
 
         return when (request) {
+            is LoginRequest -> handleLoginRequest(request,client)
+
             is CreateChatRequest -> createChat(request, account)
 
             is MessageRequest -> handleMessageRequest(request, account)
@@ -32,10 +32,10 @@ class TransactionsResolver(
             is FetchChatsByIdsRequest -> fetchChatsByIds(request, account)
             is DeleteChatRequest -> deleteChat(request, account)
 
-            is FetchAccountsRequest -> fetchAccounts(request).serialized
-            is FetchAccountsByIdsRequest -> fetchAccountsByIds(request).serialized
+            is FetchAccountsRequest -> fetchAccounts(request)
+            is FetchAccountsByIdsRequest -> fetchAccountsByIds(request)
 
-            else -> StatusResponse("cant handle your request", request.type).serialized
+            else -> Transactions.serializeStatusResponse("cant handle your request", request.type, true)
         }
     }
 
@@ -45,10 +45,11 @@ class TransactionsResolver(
         }
     }
 
-    private fun fetchAccounts(request: FetchAccountsRequest): TransactionBase = accountsService.fetchAccounts(request)
+    private fun fetchAccounts(request: FetchAccountsRequest): SerializedTransaction =
+        accountsService.fetchAccounts(request).serialized
 
-    private fun fetchAccountsByIds(request: FetchAccountsByIdsRequest): TransactionBase =
-        accountsService.fetchAccountsByIds(request)
+    private fun fetchAccountsByIds(request: FetchAccountsByIdsRequest): SerializedTransaction =
+        accountsService.fetchAccountsByIds(request).serialized
 
     private fun createChat(request: CreateChatRequest, account: Account?): SerializedTransaction {
         if (account == null) return Transactions.userNotAuthenticated(request.type)
