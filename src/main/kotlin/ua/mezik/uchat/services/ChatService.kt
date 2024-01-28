@@ -19,6 +19,7 @@ import ua.mezik.uchat.model.message.FileMessage
 import ua.mezik.uchat.model.message.TextMessage
 import ua.mezik.uchat.misc.TransactionEither
 import ua.mezik.uchat.misc.Transactions
+import ua.mezik.uchat.misc.mapLeftToStatusResponseFor
 import ua.mezik.uchat.model.message.requests.*
 import ua.mezik.uchat.model.message.responses.*
 
@@ -106,8 +107,7 @@ open class ChatService(
     open fun fetchChats(request: FetchChatsRequest, account: Account): TransactionEither<Page<Chat>> {
         return Either.catch {
             chatsRepo.findAllByParticipantsContaining(account, PageRequest.of(request.page, request.limit))
-        }
-            .mapLeft { Transactions.serializeStatusResponse(it.localizedMessage, request.type, true) }
+        }.mapLeftToStatusResponseFor(request)
     }
 
     open fun fetchChatMessages(
