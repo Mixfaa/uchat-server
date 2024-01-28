@@ -11,9 +11,6 @@ import ua.mezik.uchat.model.Chat
 
 @Repository
 interface ChatsRepo : JpaRepository<Chat, Long> {
-    fun existsByName(name: String): Boolean
-    fun findAllByName(name: String): Iterable<Chat>
-    fun findAllByOwner(owner: Account, pageable: Pageable): Page<Chat>
     fun findAllByParticipantsContaining(participant: Account, pageable: Pageable): Page<Chat>
 
     @Query(

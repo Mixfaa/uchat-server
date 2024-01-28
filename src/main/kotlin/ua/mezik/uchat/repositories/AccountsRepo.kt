@@ -8,7 +8,6 @@ import ua.mezik.uchat.model.Account
 
 @Repository
 interface AccountsRepo : JpaRepository<Account, Long> {
-    fun findByUsernameAndPassword(username: String, password: String): Account?
     fun findByUsername(username: String): Account?
     fun findAllByUsernameContainingIgnoreCase(username: String, page: Pageable): Page<Account>
 }

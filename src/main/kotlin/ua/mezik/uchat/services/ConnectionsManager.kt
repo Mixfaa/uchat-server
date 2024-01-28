@@ -11,16 +11,12 @@ class ConnectionsManager {
     private val persistedUsers: MutableList<PersistedConnection> = CopyOnWriteArrayList()
 
     fun persistConnectionFrom(account: Account, client: ChatClient) {
-        val persistedConnection = persistedConnectionByAccount(account)
+        val persistedConnection = persistedUsers.firstOrNull { it.account == account }
 
         if (persistedConnection == null)
             addPersistedConnection(account, client)
         else
             persistedConnection.clients.add(client)
-    }
-
-    fun persistedConnectionByAccount(account: Account): PersistedConnection? {
-        return persistedUsers.firstOrNull { it.account == account }
     }
 
     private fun addPersistedConnection(account: Account, chat: ChatClient) {
@@ -48,11 +44,10 @@ class ConnectionsManager {
         }
     }
 
-    fun sendTransactionToClient(account: Account, transaction: TransactionBase): Boolean {
+    fun sendTransactionToClient(account: Account, transaction: TransactionBase) {
         val clients = persistedUsers.firstOrNull { it.account == account }?.clients
-            ?: return false
+            ?: return
 
         clients.forEach { it.sendToClient(transaction) }
-        return true
     }
 }
