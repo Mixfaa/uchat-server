@@ -5,7 +5,7 @@ import kotlinx.coroutines.*
 import ua.mezik.uchat.misc.Utils
 import ua.mezik.uchat.model.message.requests.SerializedTransaction
 import ua.mezik.uchat.model.message.requests.TransactionBase
-import ua.mezik.uchat.services.ChatClient
+import ua.mezik.uchat.model.ChatClient
 import ua.mezik.uchat.services.HeartbeatSender
 import ua.mezik.uchat.services.TransactionsResolver
 import java.net.Socket

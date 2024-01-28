@@ -9,6 +9,7 @@ import ua.mezik.uchat.misc.Transactions
 import ua.mezik.uchat.repositories.AccountsRepo
 
 import ua.mezik.uchat.model.Account
+import ua.mezik.uchat.model.ChatClient
 import ua.mezik.uchat.model.message.requests.*
 import ua.mezik.uchat.model.message.responses.*
 
@@ -16,14 +17,17 @@ import ua.mezik.uchat.model.message.responses.*
 class AccountsService(
     private val accountsRepo: AccountsRepo, private val persistenceManager: ConnectionsManager
 ) {
-    fun findAccountsByIds(ids: List<Long>): MutableList<Account> {
-        val accounts = ArrayList<Account>(ids.size)
-        for (id in ids) {
-            val account = accountsRepo.findById(id)
-            if (account.isPresent) accounts.add(account.get())
-        }
-        return accounts
+    fun findAccountsByIds(ids: Iterable<Long>): Iterable<Account> {
+//                val accounts = ArrayList<Account>(ids.size)
+//        for (id in ids) {
+//            val account = accountsRepo.findById(id)
+//            if (account.isPresent) accounts.add(account.get())
+//        }
+//        return accounts
+
+        return accountsRepo.findAllByIdIsIn(ids.toMutableList())
     }
+
 
     fun fetchAccounts(fetchAccounts: FetchAccountsRequest): FetchAccountsResponse {
         val pageRequest = PageRequest.of(fetchAccounts.page, fetchAccounts.limit)

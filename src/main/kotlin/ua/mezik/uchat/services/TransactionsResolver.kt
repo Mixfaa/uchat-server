@@ -6,6 +6,7 @@ import ua.mezik.uchat.misc.foldRight
 import ua.mezik.uchat.model.message.requests.*
 import ua.mezik.uchat.model.message.responses.*
 import ua.mezik.uchat.model.Account
+import ua.mezik.uchat.model.ChatClient
 
 @Service
 class TransactionsResolver(

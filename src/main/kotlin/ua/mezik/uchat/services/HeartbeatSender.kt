@@ -3,6 +3,7 @@ package ua.mezik.uchat.services
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import ua.mezik.uchat.misc.Transactions
+import ua.mezik.uchat.model.ChatClient
 
 /**
  * This service is here not to create lots of virtual threads just for sending heartbeat messages

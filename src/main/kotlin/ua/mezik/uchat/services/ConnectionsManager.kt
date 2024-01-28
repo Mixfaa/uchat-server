@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import ua.mezik.uchat.model.PersistedConnection
 import ua.mezik.uchat.model.message.requests.TransactionBase
 import ua.mezik.uchat.model.Account
+import ua.mezik.uchat.model.ChatClient
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Service

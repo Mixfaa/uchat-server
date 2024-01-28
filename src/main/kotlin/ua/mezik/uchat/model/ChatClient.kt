@@ -1,4 +1,4 @@
-package ua.mezik.uchat.services
+package ua.mezik.uchat.model
 
 import ua.mezik.uchat.model.message.requests.SerializedTransaction
 import ua.mezik.uchat.model.message.requests.TransactionBase

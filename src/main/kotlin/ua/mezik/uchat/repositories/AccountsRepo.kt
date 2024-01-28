@@ -10,4 +10,5 @@ import ua.mezik.uchat.model.Account
 interface AccountsRepo : JpaRepository<Account, Long> {
     fun findByUsername(username: String): Account?
     fun findAllByUsernameContainingIgnoreCase(username: String, page: Pageable): Page<Account>
+    fun findAllByIdIsIn(id: MutableCollection<Long>): Iterable<Account>
 }
