@@ -36,12 +36,12 @@ class ConnectionsManager {
         persistedConnection.clients.remove(client)
     }
 
-    fun sendTransactionToClients(accounts: List<Account>, transaction: TransactionBase) {
+    fun sendTransactionToClients(accounts: Iterable<Account>, transaction: TransactionBase) {
         for (account in accounts)
             sendTransactionToClient(account, transaction)
     }
 
-    fun sendTransactionToClientsExcept(accounts: List<Account>, exception: Account, transaction: TransactionBase) {
+    fun sendTransactionToClientsExcept(accounts: Iterable<Account>, exception: Account, transaction: TransactionBase) {
         for (account in accounts) {
             if (account == exception) continue
             sendTransactionToClient(account, transaction)
