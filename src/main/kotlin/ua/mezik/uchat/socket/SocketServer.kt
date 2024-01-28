@@ -23,7 +23,7 @@ class SocketServer(
         while (socketAcceptingThread.isInterrupted) {
             val client = socket.accept()
 
-            SocketClient(client, heartbeatSender, transactionsResolver).handleAsync()
+            SocketClient(client, heartbeatSender, transactionsResolver).startHandling()
         }
     }
 }

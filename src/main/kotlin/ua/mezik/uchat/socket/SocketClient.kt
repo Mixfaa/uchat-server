@@ -1,17 +1,13 @@
 package ua.mezik.uchat.socket
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import ua.mezik.uchat.misc.Utils
 import ua.mezik.uchat.model.message.requests.SerializedTransaction
 import ua.mezik.uchat.model.message.requests.TransactionBase
 import ua.mezik.uchat.services.ChatClient
 import ua.mezik.uchat.services.HeartbeatSender
 import ua.mezik.uchat.services.TransactionsResolver
-import java.io.InputStream
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -35,21 +31,28 @@ class SocketClient(
     }
 
 
-    fun handleAsync() {
+    fun startHandling() {
         heartbeatSender.addReceiver(this) { _ -> close() }
 
         coroutineContext.launch {
             val inputStream = clientSocket.getInputStream()
+            val messageBuilder = StringBuilder()
             while (isConnected.get()) {
                 try {
-                    var availableToRead = inputStream.available()
-                    
-                    while (availableToRead <= 0 && isConnected.get()) {
-                        availableToRead = inputStream.available()
-                        Thread.sleep(50)
-                    }
+                    var lastDelimiterIndex: Int
+                    do {
+                        var availableToRead = 0
+                        while (availableToRead <= 0 && isConnected.get()) {
+                            availableToRead = inputStream.available()
+                            delay(50)
+                        }
 
-                    val message = String(inputStream.readNBytes(availableToRead))
+                        messageBuilder.append(String(inputStream.readNBytes(availableToRead)))
+                        lastDelimiterIndex = messageBuilder.lastIndexOf('\n')
+                    } while (lastDelimiterIndex == -1)
+
+                    val message = messageBuilder.substring(0, lastDelimiterIndex + 1)
+                    messageBuilder.removeRange(0, lastDelimiterIndex + 1)
 
                     for (json in Utils.splitJsons(message)) {
                         val probablyRequest = Utils.jsonMapper.readValue<TransactionBase>(json)
@@ -78,52 +81,3 @@ class SocketClient(
         heartbeatSender.removeReceiver(this)
     }
 }
-
-
-
-/*
-    fun handleAsync() {
-        heartbeatSender.addReceiver(this) { _ -> close() }
-
-        coroutineContext.launch {
-            val inputStream = clientSocket.getInputStream()
-            val messageBuilder = StringBuilder()
-            while (isConnected.get()) {
-                try {
-                    if (!isConnected.get()) return@launch
-
-                    do {
-                        messageBuilder.append(readFromSocket(inputStream))
-                    } while (messageBuilder.lastOrNull() != '\n' || messageBuilder.contains('\n')) // we will wait and read from socket until we get complete message
-
-                    val lastIndexOfDelimiter = messageBuilder.lastIndexOf('\n')
-
-                    val completeMessage: String
-
-                    if (messageBuilder.lastIndex == lastIndexOfDelimiter) {
-                        completeMessage = messageBuilder.toString()
-                        messageBuilder.clear()
-                    } else {
-                        completeMessage = messageBuilder.substring(0, lastIndexOfDelimiter + 1)
-                        messageBuilder.deleteRange(0, lastIndexOfDelimiter + 1) // test it
-                    }
-
-                    for (json in Utils.splitJsons(completeMessage)) {
-                        val probablyRequest = Utils.jsonMapper.readValue<TransactionBase>(json)
-                        println(probablyRequest)
-
-                        val response = transactionsResolver.handleRequest(probablyRequest, this@SocketClient)
-                            ?: continue
-
-                        sendToClient(response)
-                    }
-
-                } catch (ex: Exception) {
-                    ex.printStackTrace()
-                    close()
-                    return@launch
-                }
-            }
-        }
-    }
- */
