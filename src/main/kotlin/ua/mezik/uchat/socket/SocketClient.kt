@@ -52,7 +52,9 @@ class SocketClient(
                     } while (lastDelimiterIndex == -1)
 
                     val message = messageBuilder.substring(0, lastDelimiterIndex + 1)
-                    messageBuilder.removeRange(0, lastDelimiterIndex + 1)
+                    val cleared = messageBuilder.removeRange(0, lastDelimiterIndex + 1)
+                    messageBuilder.clear()
+                    messageBuilder.append(cleared)
 
                     for (json in Utils.splitJsons(message)) {
                         val probablyRequest = Utils.jsonMapper.readValue<TransactionBase>(json)

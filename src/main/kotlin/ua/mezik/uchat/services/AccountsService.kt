@@ -28,7 +28,6 @@ class AccountsService(
         return accountsRepo.findAllByIdIsIn(ids.toMutableList())
     }
 
-
     fun fetchAccounts(fetchAccounts: FetchAccountsRequest): FetchAccountsResponse {
         val pageRequest = PageRequest.of(fetchAccounts.page, fetchAccounts.limit)
 
@@ -64,5 +63,4 @@ class AccountsService(
         val fetchedAccounts = accountsRepo.findAllById(request.ids)
         return FetchAccountsResponse(fetchedAccounts, null)
     }
-
 }
