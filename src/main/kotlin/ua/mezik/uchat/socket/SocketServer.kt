@@ -15,12 +15,12 @@ class SocketServer(
     private val transactionsResolver: TransactionsResolver,
     private val heartbeatSender: HeartbeatSender
 ) {
-    private var socketAcceptingThread: Thread = Thread(this::acceptSockets).also { it.start() }
+    private var socketAcceptingThread = Thread(this::acceptSockets).also { it.start() }
 
     private fun acceptSockets() {
         println("Socket is listening...")
         val socket = ServerSocket(port, backlog, InetAddress.getByName(inetAddress))
-        while (socketAcceptingThread.isInterrupted) {
+        while (!socketAcceptingThread.isInterrupted) {
             val client = socket.accept()
 
             SocketClient(client, heartbeatSender, transactionsResolver).startHandling()
