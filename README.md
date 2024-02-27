@@ -1,3 +1,8 @@
-Designed for C client, so, it is simple
+Hardfork with mongodb as database
+Also it is reactive (inside)
 
-Main branch now is innovative, it's reactive
+Uses encryption by this scheme:
+
+User register with public key and stores his private key ->
+Creates chat with other participants, sends them symmetric key encrypted with their public keys ->
+Messages in chats are encrypted with this symmetric key 
