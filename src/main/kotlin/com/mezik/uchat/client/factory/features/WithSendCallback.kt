@@ -58,6 +58,4 @@ class WithSendCallback(
         return builder
             .defineField("_send_callback", Any::class.java, Visibility.PUBLIC)
     }
-
-
 }

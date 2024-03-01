@@ -4,7 +4,6 @@ import com.mixfa.bytebuddy_proxy.ClassInstanceBuilder
 import com.mixfa.bytebuddy_proxy.MethodInterceptionDescription
 import net.bytebuddy.dynamic.DynamicType
 
-
 interface InstanceFieldsConfigurer {
     fun configureInstanceFields(fields: InstanceFields)
 
