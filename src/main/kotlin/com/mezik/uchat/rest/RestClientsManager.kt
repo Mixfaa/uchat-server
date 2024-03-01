@@ -1,36 +1,58 @@
 package com.mezik.uchat.rest
 
 import com.mezik.uchat.client.ChatClient
-import com.mezik.uchat.client.ChatClientFactory
+import com.mezik.uchat.client.factory.ChatClientFactoryBuilder
+import com.mezik.uchat.client.factory.features.WithReceiveCallback
+import com.mezik.uchat.client.factory.features.WithSendCallback
 import com.mezik.uchat.client.rest.RestClient
 import com.mezik.uchat.model.message.*
 import kotlinx.coroutines.*
 import org.springframework.stereotype.Service
 import java.security.Principal
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 
 @Service
-class RestClientsManager {
-    private val restClientsImpl = Collections.synchronizedMap(HashMap<String, RestClient>())
-    private val selfRegisterClients = mutableListOf<RestClient>()
+class RestClientsManager(
+    factoryBuilder: ChatClientFactoryBuilder
+) {
+    private val restClients = Collections.synchronizedMap(HashMap<String, RestClient>())
+    private val selfRegisterClients = CopyOnWriteArrayList<RestClient>()
 
-    fun selfRegisterRestClient(registerRequest: RegisterRequest): RestClient {
-        val selfRegisterClient = ChatClientFactory.newRestClientWithCallback { client, transaction ->
-            when (transaction) {
-                is LoginResponse -> {
-                    restClientsImpl[transaction.user.username] = ChatClientFactory.newRestClient(client.emitter)
-                    selfRegisterClients.remove(client)
-                }
+    private val defaultFactory = factoryBuilder.defaultFactory()
 
-                is StatusResponse ->
-                    if (transaction.responseFor == TransactionType.REQUEST_REGISTER) {
-                        client.emitter.complete()
+    private val selfRegisterFactory = factoryBuilder
+        .createFactory(
+            WithSendCallback(::sendReceiveCallback),
+            WithReceiveCallback(::sendReceiveCallback)
+        )
+
+    private fun sendReceiveCallback(client: ChatClient, transaction: TransactionBase) {
+        when (client) {
+            is RestClient -> {
+                when (transaction) {
+                    is LoginResponse -> {
+                        restClients[transaction.user.username] = defaultFactory.newRestClient(client.emitter)
                         selfRegisterClients.remove(client)
                     }
 
-                else -> {}
+                    is StatusResponse -> {
+                        if (transaction.responseFor == TransactionType.REQUEST_REGISTER) {
+                            client.emitter.complete()
+                            selfRegisterClients.remove(client)
+                        }
+                    }
+                    else -> {}
+                }
             }
+
+            else -> {}
         }
+    }
+
+
+    fun selfRegisterRestClient(registerRequest: RegisterRequest): RestClient {
+        val selfRegisterClient = selfRegisterFactory.newRestClient()
 
         coroutineScope.launch {
             delay(500)
@@ -42,8 +64,8 @@ class RestClientsManager {
     }
 
     fun authenticatedRestClient(loginRequest: LoginRequest, principal: Principal): RestClient =
-        restClientsImpl.getOrPut(principal.name) {
-            val client = ChatClientFactory.newRestClient()
+        restClients.getOrPut(principal.name) {
+            val client = selfRegisterFactory.newRestClient()
 
             coroutineScope.launch {
                 delay(500)
@@ -58,7 +80,7 @@ class RestClientsManager {
     }
 
     fun handleTransactionFrom(transaction: TransactionBase, principal: Principal) {
-        val client = restClientsImpl[principal.name] ?: return
+        val client = restClients[principal.name] ?: return
         client.handleTransaction(transaction)
     }
 

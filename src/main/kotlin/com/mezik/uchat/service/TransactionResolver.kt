@@ -162,11 +162,11 @@ class TransactionResolver(
         chatService
             .deleteMessage(request, account)
             .sendErrorToClient(request.type, client)
-            .subscribe { chat ->
-                val deleteMessageResponse = MessageDeleteResponse(request.messageId, chat.id)
+            .subscribe { result ->
+                val deleteMessageResponse = MessageDeleteResponse(request.messageId, result.chat.id)
 
                 client.sendToClient(deleteMessageResponse)
-                transactionBroadcaster.broadcastToClientsExcept(chat.members, account, deleteMessageResponse)
+                transactionBroadcaster.broadcastToClientsExcept(result.chat.members, account, deleteMessageResponse)
             }
     }
 
@@ -219,11 +219,10 @@ class TransactionResolver(
 
         chatService
             .deleteChat(request, account)
-            .collect(Collectors.toList())
-            .subscribe { accounts ->
-                val response = DeleteChatResponse(request.chatId)
+            .subscribe { result ->
+                val response = DeleteChatResponse(result.chatId)
                 client.sendToClient(response)
-                transactionBroadcaster.broadcastToClientsExcept(accounts, account, response)
+                transactionBroadcaster.broadcastToClientsExcept(result.members, account, response)
             }
     }
 

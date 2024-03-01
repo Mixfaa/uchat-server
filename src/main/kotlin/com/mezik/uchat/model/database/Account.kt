@@ -60,8 +60,6 @@ data class Account(
     override fun isEnabled(): Boolean = true
 
     companion object {
-        private val AUTHORITIES = mutableListOf(object : GrantedAuthority {
-            override fun getAuthority(): String = "user"
-        })
+        private val AUTHORITIES = mutableListOf(GrantedAuthority { "user" })
     }
 }

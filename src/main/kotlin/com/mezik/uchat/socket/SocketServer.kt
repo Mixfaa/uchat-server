@@ -1,11 +1,14 @@
 package com.mezik.uchat.socket
 
-import com.mezik.uchat.client.ChatClientFactory
+import com.mezik.uchat.client.ChatClient
+import com.mezik.uchat.client.factory.ChatClientFactoryBuilder
+import com.mezik.uchat.client.factory.features.WithDisconnectCallback
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.net.InetAddress
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.net.ssl.SSLException
 import javax.net.ssl.SSLServerSocket
 import javax.net.ssl.SSLServerSocketFactory
@@ -16,8 +19,14 @@ final class SocketServer(
     @Value("\${socket.ip4}") private val inetAddress: String,
     @Value("\${socket.backlog}") private val backlog: Int,
     @Value("\${socket.port}") private val port: Int,
-    sslServerSocketFactory: SSLServerSocketFactory
+    sslServerSocketFactory: SSLServerSocketFactory,
+    factoryBuilder: ChatClientFactoryBuilder
 ) {
+    private val socketClients = CopyOnWriteArrayList<ChatClient>()
+
+    private val chatClientFactory = factoryBuilder
+        .createFactory(WithDisconnectCallback(socketClients::remove))
+
     init {
         logger.info("Server socket started...")
         val serverSocket =
@@ -32,15 +41,12 @@ final class SocketServer(
                 val client = serverSocket.accept() as SSLSocket
 
                 client.addHandshakeCompletedListener {
-                    it.socket.tcpNoDelay = true
-                    ChatClientFactory.newSocketClient(it.socket)
+                    socketClients.add(chatClientFactory.newSocketClient(it.socket))
                 }
                 try {
                     client.startHandshake()
                 } catch (ex: SSLException) {
                     logger.error(ex.localizedMessage)
-                    ex.printStackTrace()
-                    continue
                 }
             }
         }

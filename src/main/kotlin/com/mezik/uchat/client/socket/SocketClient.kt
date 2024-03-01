@@ -35,12 +35,9 @@ open class SocketClient(
         }.invokeOnCompletion(::handleCoroutineCompletion)
     }
 
-    private fun handleCoroutineCompletion(throwable: Throwable?) = when (throwable) {
-        null -> {}
-        else -> {
-            throwable.printStackTrace()
+    private fun handleCoroutineCompletion(throwable: Throwable?) {
+        if (throwable != null)
             handleDisconnect()
-        }
     }
 
     override fun sendToClient(transaction: TransactionBase) {

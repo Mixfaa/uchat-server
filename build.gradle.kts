@@ -1,10 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.2.1"
+    id("org.springframework.boot") version "3.2.3"
     id("io.spring.dependency-management") version "1.1.4"
-    kotlin("jvm") version "1.9.21"
-    kotlin("plugin.spring") version "1.9.21"
+    kotlin("jvm") version "1.9.22"
+    kotlin("plugin.spring") version "1.9.22"
 }
 
 group = "ua.chat_socket"
@@ -23,7 +23,7 @@ private val byteBuddyVersion = "1.14.11"
 
 dependencies {
 
-    implementation("com.github.Mixfaa:bytebuddy_proxy:0.1.2")
+    implementation("com.github.Mixfaa:bytebuddy_proxy:0.1.3-beta")
 
     implementation("net.bytebuddy:byte-buddy:$byteBuddyVersion")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.77")

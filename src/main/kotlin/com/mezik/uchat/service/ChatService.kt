@@ -4,8 +4,8 @@ import com.mezik.uchat.model.database.*
 import com.mezik.uchat.model.message.*
 import com.mezik.uchat.repository.ChatMessagesRepository
 import com.mezik.uchat.repository.ChatsRepository
+import com.mezik.uchat.service.results.*
 import com.mezik.uchat.shared.*
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -66,33 +66,37 @@ class ChatService(
 
     fun createMessage(request: MessageRequest, account: Account): Mono<ChatMessage> {
         return chatsRepository.findById(request.chatId)
-            .switchIfEmpty(Mono.error(CachedExceptions.emptyMono))
-            .flatMap { targetChat ->
-                val chatMessage = ChatMessage.createBasedOnRequest(request, account, targetChat)
-                return@flatMap Mono.just(chatMessage)
+            .orNotFound("chat")
+            .handle { chat, sink ->
+                if (chat.members.contains(account))
+                    sink.next(ChatMessage.createBasedOnRequest(request, account, chat))
+                else
+                    sink.error(CachedExceptions.accessDenied)
             }
             .flatMap { chatMessage ->
                 messagesRepo.save(chatMessage)
             }
     }
 
-    fun addMemberToChat(request: ChatAddMemberRequest, account: Account): Mono<Pair<Account, Chat>> {
+    fun addMemberToChat(request: ChatAddMemberRequest, account: Account): Mono<ChatMemberAddedResult> {
         if (request.decryptionKeys.isEmpty())
             return Mono.error(ValueNotProvidedException("Chat admin not provided any decryption keys"))
 
         return chatsRepository
             .findById(request.chatId)
-            .switchIfEmpty(Mono.error(CachedExceptions.emptyMono))
-            .flatMap { chat ->
-                if (chat.owner != account)
-                    Mono.error(CachedExceptions.accessDenied)
+            .orNotFound("chat")
+            .handle { chat, sink ->
+                if (chat.owner == account)
+                    sink.next(chat)
                 else
-                    Mono.just(chat)
+                    sink.error(CachedExceptions.accessDenied)
             }
             .flatMap { chat ->
-                accountsService.findAccount(request.memberId).map { account ->
-                    account to chat
-                }
+                accountsService.findAccount(request.memberId)
+                    .orNotFound("account")
+                    .map { account ->
+                        ChatMemberAddedResult(account, chat)
+                    }
             }
             .flatMap { (member, chat) ->
                 val updatedChat = chat.copy(
@@ -100,22 +104,25 @@ class ChatService(
                     membersDecryptionKeys = chat.membersDecryptionKeys + request.decryptionKeys
                 )
 
-                chatsRepository.save(updatedChat)
-                    .map { newChat -> member to newChat }
+                chatsRepository
+                    .save(updatedChat)
+                    .map {
+                        ChatMemberAddedResult(member, it)
+                    }
             }
     }
 
     fun editMessage(request: MessageEditRequest, account: Account): Mono<TextMessage> {
         return messagesRepo
             .findById(request.messageId)
-            .switchIfEmpty(Mono.error(CachedExceptions.emptyMono))
-            .flatMap { message ->
+            .orNotFound("message")
+            .handle { message, sink ->
                 if (message.owner != account)
-                    Mono.error(CachedExceptions.accessDenied)
+                    sink.error(CachedExceptions.accessDenied)
                 else if (message.type != MessageType.TEXT || message !is TextMessage)
-                    Mono.error(CachedExceptions.messageNotEditable)
+                    sink.error(CachedExceptions.messageNotEditable)
                 else
-                    Mono.just(message)
+                    sink.next(message)
             }
             .cast(TextMessage::class.java)
             .flatMap { message ->
@@ -124,20 +131,20 @@ class ChatService(
             }
     }
 
-    fun deleteMessage(request: MessageDeleteRequest, account: Account): Mono<Chat> {
+    fun deleteMessage(request: MessageDeleteRequest, account: Account): Mono<ChatMessageDeletedResult> {
         return messagesRepo
             .findById(request.messageId)
-            .switchIfEmpty(Mono.error(CachedExceptions.emptyMono))
-            .flatMap { message ->
+            .orNotFound("message")
+            .handle { message, sink ->
                 if (message.owner != account)
-                    Mono.error(CachedExceptions.accessDenied)
+                    sink.error(CachedExceptions.accessDenied)
                 else
-                    Mono.just(message)
+                    sink.next(message)
             }
-            .doOnSuccess { message ->
-                messagesRepo.delete(message).subscribe()
+            .flatMap { message ->
+                messagesRepo.delete(message)
+                    .then(Mono.fromCallable { ChatMessageDeletedResult(message.chat, message.id) })
             }
-            .map { it.chat }
     }
 
     fun fetchChats(request: FetchChatsRequest, account: Account): Flux<Chat> {
@@ -149,12 +156,12 @@ class ChatService(
         account: Account
     ): Flux<ChatMessage> {
         return chatsRepository.findById(request.chatId)
-            .switchIfEmpty(Mono.error(CachedExceptions.emptyMono))
-            .flatMap { chat ->
-                if (!chat.members.contains(account))
-                    Mono.error(CachedExceptions.accessDenied)
+            .orNotFound("chat")
+            .handle { chat, sink ->
+                if (chat.members.contains(account))
+                    sink.next(chat)
                 else
-                    Mono.just(chat)
+                    sink.error(CachedExceptions.accessDenied)
             }
             .flatMapMany { chat ->
                 messagesRepo.findAllByChat(
@@ -166,20 +173,23 @@ class ChatService(
 
     fun deleteChat(
         request: DeleteChatRequest, account: Account
-    ): Flux<Account> {
+    ): Mono<ChatDeletedResult> {
         return chatsRepository.findById(request.chatId)
-            .switchIfEmpty(Mono.error(CachedExceptions.emptyMono))
-            .flatMap { chat ->
+            .orNotFound("chat")
+            .handle { chat, sink ->
                 if (chat.owner != account)
-                    Mono.error(CachedExceptions.accessDenied)
+                    sink.error(CachedExceptions.accessDenied)
                 else
-                    Mono.just(chat)
+                    sink.next(chat)
             }
-            .doOnSuccess { chat ->
-                messagesRepo.deleteAllByChat(chat).subscribe()
-                chatsRepository.delete(chat).subscribe()
+            .flatMap { chat ->
+                val deletedResult = ChatDeletedResult(chat.id, chat.members)
+
+                messagesRepo
+                    .deleteAllByChat(chat)
+                    .then(chatsRepository.delete(chat))
+                    .then(Mono.just(deletedResult))
             }
-            .flatMapMany { chat -> Flux.fromIterable(chat.members) }
     }
 
     fun fetchChatsByIds(request: FetchChatsByIdsRequest, account: Account): Flux<Chat> =
@@ -187,8 +197,4 @@ class ChatService(
 
     fun getChatIdsByParticipant(account: Account): Flux<Long> =
         chatsRepository.findAllByMembersContaining(account).map(Chat::id)
-
-    companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
-    }
 }

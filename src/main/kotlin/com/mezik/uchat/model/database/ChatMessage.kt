@@ -11,11 +11,11 @@ import java.util.*
 @Document("chat_message")
 sealed class ChatMessage(
     val owner: Account,
-    @field:JsonIgnore val chat: Chat,
+    val chat: Chat,
     val type: MessageType,
     val timestamp: Long,
     val keyId: Long,
-    @field:JsonIgnore @Id var databaseId: ObjectId = ObjectId(),
+    @Id var databaseId: ObjectId = ObjectId(),
     var id: Long = SequencedIdGenerator.instance.generateId("chat_message")
 ) {
     companion object {

@@ -1,15 +1,16 @@
 package com.mezik.uchat.service
 
+import com.mezik.uchat.client.ChatClient
 import com.mezik.uchat.model.database.Account
 import com.mezik.uchat.model.message.FetchAccountsByIdsRequest
 import com.mezik.uchat.model.message.FetchAccountsRequest
 import com.mezik.uchat.model.message.LoginRequest
 import com.mezik.uchat.model.message.RegisterRequest
 import com.mezik.uchat.repository.AccountsRepository
-import com.mezik.uchat.client.ChatClient
 import com.mezik.uchat.shared.CachedExceptions
 import com.mezik.uchat.shared.UsernameTakenException
 import com.mezik.uchat.shared.asPublicKey
+import com.mezik.uchat.shared.orNotFound
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -46,7 +47,7 @@ class AccountsService(
             .existsByUsername(request.username)
             .flatMap { exist ->
                 if (exist)
-                    return@flatMap Mono.error(UsernameTakenException("Username ${request.username} is already taken"))
+                    return@flatMap Mono.error(UsernameTakenException(request.username))
 
                 if (request.publicKey.asPublicKey().isFailure)
                     return@flatMap Mono.error(CachedExceptions.publicKeyNotProvided)
@@ -61,12 +62,12 @@ class AccountsService(
 
     fun handleLogin(request: LoginRequest, client: ChatClient): Mono<Account> {
         return accountsRepository.findByUsername(request.username)
-            .switchIfEmpty(Mono.error(CachedExceptions.emptyMono))
-            .flatMap { account ->
-                if (passwordEncoder.matches(request.password, account.password))
-                    Mono.just(account)
+            .orNotFound("account")
+            .handle { account, sink ->
+                if (passwordEncoder.matches(request.password,account.password))
+                    sink.next(account)
                 else
-                    Mono.error(CachedExceptions.passwordNotMatch)
+                    sink.error(CachedExceptions.passwordNotMatch)
             }
             .doOnSuccess { account ->
                 persistenceManager.persistConnectionFrom(account, client)
@@ -78,5 +79,5 @@ class AccountsService(
     }
 
     override fun loadUserByUsername(username: String): UserDetails = accountsRepository.findByUsername(username).block()
-        ?: throw UsernameNotFoundException("username")
+        ?: throw UsernameNotFoundException(username)
 }
