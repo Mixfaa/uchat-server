@@ -18,6 +18,7 @@ import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLServerSocketFactory
 import javax.net.ssl.TrustManagerFactory
+import kotlin.reflect.jvm.javaMethod
 
 
 @Configuration

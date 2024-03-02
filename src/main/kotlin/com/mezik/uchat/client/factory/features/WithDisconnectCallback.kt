@@ -16,13 +16,11 @@ private value class DisconnectCallback(
     val callback: (ChatClient) -> Unit
 )
 
-internal object DisconnectInterceptor {
-    @JvmStatic
-    fun interceptedDisconnect(obj: ChatClient, callback: Any?) {
-        if (callback != null && callback is DisconnectCallback)
-            callback.callback(obj)
-    }
+internal fun interceptedDisconnect(obj: ChatClient, callback: Any?) {
+    if (callback != null && callback is DisconnectCallback)
+        callback.callback(obj)
 }
+
 
 class WithDisconnectCallback(
     callback: (ChatClient) -> Unit
@@ -41,7 +39,7 @@ class WithDisconnectCallback(
                 )
             )
             .setImlp(
-                MethodCall.invoke(DisconnectInterceptor::interceptedDisconnect.javaMethod!!)
+                MethodCall.invoke(::interceptedDisconnect.javaMethod!!)
                     .withThis()
                     .withField("_disconnect_callback")
             )

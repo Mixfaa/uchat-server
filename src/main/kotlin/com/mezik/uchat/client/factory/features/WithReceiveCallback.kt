@@ -17,12 +17,9 @@ private value class ReceiveCallback(
     val callback: (ChatClient, TransactionBase) -> Unit
 )
 
-internal object ReceiveInterceptor {
-    @JvmStatic
-    fun interceptedReceive(obj: ChatClient, callback: Any?, transaction: TransactionBase) {
-        if (callback != null && callback is ReceiveCallback)
-            callback.callback(obj, transaction)
-    }
+internal fun interceptedReceive(obj: ChatClient, callback: Any?, transaction: TransactionBase) {
+    if (callback != null && callback is ReceiveCallback)
+        callback.callback(obj, transaction)
 }
 
 class WithReceiveCallback(
@@ -42,7 +39,7 @@ class WithReceiveCallback(
                 )
             )
             .setImlp(
-                MethodCall.invoke(ReceiveInterceptor::interceptedReceive.javaMethod!!)
+                MethodCall.invoke(::interceptedReceive.javaMethod!!)
                     .withThis()
                     .withField("_receive_callback")
                     .withAllArguments()

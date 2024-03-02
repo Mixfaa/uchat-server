@@ -13,19 +13,14 @@ import org.springframework.context.ApplicationListener
 import org.springframework.stereotype.Component
 import kotlin.reflect.jvm.javaMethod
 
-internal object SendReceiveLogger {
-    @JvmStatic
-    fun interceptSend(transaction: TransactionBase) {
-        logger.info("Send: $transaction")
-    }
+private val logger = LoggerFactory.getLogger("Client logger")
 
-    @JvmStatic
-    fun interceptHandle(transaction: TransactionBase) {
-        logger.info("Receive: $transaction")
-    }
+internal fun interceptSend(transaction: TransactionBase) {
+    logger.info("Send: $transaction")
+}
 
-    @JvmStatic
-    private val logger = LoggerFactory.getLogger("Client logger")
+internal fun interceptHandle(transaction: TransactionBase) {
+    logger.info("Receive: $transaction")
 }
 
 @Component
@@ -39,7 +34,7 @@ class ChatClientLoggingConfigurator : ApplicationListener<ChatClientFactoryBuild
                     MethodDescription.ForLoadedMethod(ChatClient::sendToClient.javaMethod!!).asSignatureToken()
                 )
             )
-            .setImlp(MethodCall.invoke(SendReceiveLogger::interceptSend.javaMethod!!).withAllArguments())
+            .setImlp(MethodCall.invoke(::interceptSend.javaMethod!!).withAllArguments())
             .build()
 
         val handleInterception = MethodInterceptionDescription.Builder()
@@ -50,7 +45,7 @@ class ChatClientLoggingConfigurator : ApplicationListener<ChatClientFactoryBuild
                     MethodDescription.ForLoadedMethod(ChatClient::handleTransaction.javaMethod!!).asSignatureToken()
                 )
             )
-            .setImlp(MethodCall.invoke(SendReceiveLogger::interceptHandle.javaMethod!!).withAllArguments())
+            .setImlp(MethodCall.invoke(::interceptHandle.javaMethod!!).withAllArguments())
             .build()
 
         event.addFeature(SimpleMethodInterception(sendInterception))

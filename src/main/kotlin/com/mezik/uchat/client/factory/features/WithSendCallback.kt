@@ -18,12 +18,9 @@ private value class SendCallback(
     val callback: (ChatClient, TransactionBase) -> Unit
 )
 
-internal object SendInterceptor {
-    @JvmStatic
-    fun interceptedSend(obj: ChatClient, callback: Any?, transaction: TransactionBase) {
-        if (callback != null && callback is SendCallback)
-            callback.callback(obj, transaction)
-    }
+internal fun interceptedSend(obj: ChatClient, callback: Any?, transaction: TransactionBase) {
+    if (callback != null && callback is SendCallback)
+        callback.callback(obj, transaction)
 }
 
 class WithSendCallback(
@@ -43,7 +40,7 @@ class WithSendCallback(
                 )
             )
             .setImlp(
-                MethodCall.invoke(SendInterceptor::interceptedSend.javaMethod!!)
+                MethodCall.invoke(::interceptedSend.javaMethod!!)
                     .withThis()
                     .withField("_send_callback")
                     .withAllArguments()
