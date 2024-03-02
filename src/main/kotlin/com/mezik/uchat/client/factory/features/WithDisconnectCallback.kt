@@ -11,16 +11,14 @@ import net.bytebuddy.implementation.MethodCall
 import net.bytebuddy.matcher.ElementMatchers
 import kotlin.reflect.jvm.javaMethod
 
-@JvmInline
-private value class DisconnectCallback(
-    val callback: (ChatClient) -> Unit
-)
+private class DisconnectCallback(
+    private val callback: (ChatClient) -> Unit
+) : (ChatClient) -> Unit by callback
 
 internal fun interceptedDisconnect(obj: ChatClient, callback: Any?) {
     if (callback != null && callback is DisconnectCallback)
-        callback.callback(obj)
+        callback(obj)
 }
-
 
 class WithDisconnectCallback(
     callback: (ChatClient) -> Unit

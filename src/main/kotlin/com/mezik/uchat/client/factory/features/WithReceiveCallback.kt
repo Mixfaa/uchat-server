@@ -12,14 +12,13 @@ import net.bytebuddy.implementation.MethodCall
 import net.bytebuddy.matcher.ElementMatchers
 import kotlin.reflect.jvm.javaMethod
 
-@JvmInline
-private value class ReceiveCallback(
-    val callback: (ChatClient, TransactionBase) -> Unit
-)
+private class ReceiveCallback(
+    private val callback: (ChatClient, TransactionBase) -> Unit
+) : (ChatClient, TransactionBase) -> Unit by callback
 
 internal fun interceptedReceive(obj: ChatClient, callback: Any?, transaction: TransactionBase) {
     if (callback != null && callback is ReceiveCallback)
-        callback.callback(obj, transaction)
+        callback(obj, transaction)
 }
 
 class WithReceiveCallback(
