@@ -4,7 +4,9 @@ import com.mezik.uchat.model.database.*
 import com.mezik.uchat.model.message.*
 import com.mezik.uchat.service.repository.ChatMessagesRepository
 import com.mezik.uchat.service.repository.ChatsRepository
-import com.mezik.uchat.service.results.*
+import com.mezik.uchat.service.results.ChatDeletedResult
+import com.mezik.uchat.service.results.ChatMemberAddedResult
+import com.mezik.uchat.service.results.ChatMessageDeletedResult
 import com.mezik.uchat.shared.*
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -12,6 +14,16 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.stream.Collectors
+
+
+private val messageNotFoundError = Mono.error<ChatMessage>(NotFoundException("Message"))
+private val chatNotFoundError = Mono.error<Chat>(NotFoundException("Chat"))
+
+private fun Mono<Chat>.orChatNotFound() =
+    this.switchIfEmpty(chatNotFoundError)
+
+private fun Mono<ChatMessage>.orMessageNotFound() =
+    this.switchIfEmpty(messageNotFoundError)
 
 @Service
 class ChatService(
@@ -66,7 +78,7 @@ class ChatService(
 
     fun createMessage(request: MessageRequest, account: Account): Mono<ChatMessage> {
         return chatsRepository.findById(request.chatId)
-            .orNotFound("chat")
+            .orChatNotFound()
             .handle { chat, sink ->
                 if (chat.members.contains(account))
                     sink.next(ChatMessage.createBasedOnRequest(request, account, chat))
@@ -84,7 +96,7 @@ class ChatService(
 
         return chatsRepository
             .findById(request.chatId)
-            .orNotFound("chat")
+            .orChatNotFound()
             .handle { chat, sink ->
                 if (chat.owner == account)
                     sink.next(chat)
@@ -93,7 +105,6 @@ class ChatService(
             }
             .flatMap { chat ->
                 accountsService.findAccount(request.memberId)
-                    .orNotFound("account")
                     .map { account ->
                         ChatMemberAddedResult(account, chat)
                     }
@@ -115,7 +126,7 @@ class ChatService(
     fun editMessage(request: MessageEditRequest, account: Account): Mono<TextMessage> {
         return messagesRepo
             .findById(request.messageId)
-            .orNotFound("message")
+            .orMessageNotFound()
             .handle { message, sink ->
                 if (message.owner != account)
                     sink.error(CachedExceptions.accessDenied)
@@ -134,7 +145,7 @@ class ChatService(
     fun deleteMessage(request: MessageDeleteRequest, account: Account): Mono<ChatMessageDeletedResult> {
         return messagesRepo
             .findById(request.messageId)
-            .orNotFound("message")
+            .orMessageNotFound()
             .handle { message, sink ->
                 if (message.owner != account)
                     sink.error(CachedExceptions.accessDenied)
@@ -156,7 +167,7 @@ class ChatService(
         account: Account
     ): Flux<ChatMessage> {
         return chatsRepository.findById(request.chatId)
-            .orNotFound("chat")
+            .orChatNotFound()
             .handle { chat, sink ->
                 if (chat.members.contains(account))
                     sink.next(chat)
@@ -175,7 +186,7 @@ class ChatService(
         request: DeleteChatRequest, account: Account
     ): Mono<ChatDeletedResult> {
         return chatsRepository.findById(request.chatId)
-            .orNotFound("chat")
+            .orChatNotFound()
             .handle { chat, sink ->
                 if (chat.owner != account)
                     sink.error(CachedExceptions.accessDenied)

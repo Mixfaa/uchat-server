@@ -27,8 +27,9 @@ internal object SendInterceptor {
 }
 
 class WithSendCallback(
-    private val callback: (ChatClient, TransactionBase) -> Unit
+    callback: (ChatClient, TransactionBase) -> Unit
 ) : FactoryFeature {
+    private val sendCallback = SendCallback(callback)
 
     override val interceptions: List<MethodInterceptionDescription> = listOf(
         MethodInterceptionDescription.Builder()
@@ -51,7 +52,7 @@ class WithSendCallback(
     )
 
     override fun configureInstanceFields(fields: InstanceFieldsConfigurer.InstanceFields) {
-        fields.addField("_send_callback", SendCallback(callback))
+        fields.addField("_send_callback", sendCallback)
     }
 
     override fun configureClass(builder: DynamicType.Builder<*>): DynamicType.Builder<*> {

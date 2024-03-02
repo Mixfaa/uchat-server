@@ -26,8 +26,9 @@ internal object ReceiveInterceptor {
 }
 
 class WithReceiveCallback(
-    private val callback: (ChatClient, TransactionBase) -> Unit
+    callback: (ChatClient, TransactionBase) -> Unit
 ) : FactoryFeature {
+    private val receiveCallback = ReceiveCallback(callback)
 
     override val interceptions: List<MethodInterceptionDescription> = listOf(
         MethodInterceptionDescription.Builder()
@@ -50,7 +51,7 @@ class WithReceiveCallback(
     )
 
     override fun configureInstanceFields(fields: InstanceFieldsConfigurer.InstanceFields) {
-        fields.addField("_receive_callback", ReceiveCallback(callback))
+        fields.addField("_receive_callback", receiveCallback)
     }
 
     override fun configureClass(builder: DynamicType.Builder<*>): DynamicType.Builder<*> {

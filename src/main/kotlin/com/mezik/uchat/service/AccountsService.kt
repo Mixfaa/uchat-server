@@ -8,9 +8,9 @@ import com.mezik.uchat.model.message.LoginRequest
 import com.mezik.uchat.model.message.RegisterRequest
 import com.mezik.uchat.service.repository.AccountsRepository
 import com.mezik.uchat.shared.CachedExceptions
+import com.mezik.uchat.shared.NotFoundException
 import com.mezik.uchat.shared.UsernameTakenException
 import com.mezik.uchat.shared.asPublicKey
-import com.mezik.uchat.shared.orNotFound
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -20,6 +20,11 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
+private val accountNotFoundError = Mono.error<Account>(NotFoundException("Account"))
+
+private fun Mono<Account>.orAccountNotFound() =
+    this.switchIfEmpty(accountNotFoundError)
+
 @Service
 class AccountsService(
     private val accountsRepository: AccountsRepository,
@@ -27,7 +32,7 @@ class AccountsService(
     private val passwordEncoder: PasswordEncoder
 ) : UserDetailsService {
     fun findAccount(id: Long): Mono<Account> {
-        return accountsRepository.findById(id)
+        return accountsRepository.findById(id).orAccountNotFound()
     }
 
     fun findAccountsByIds(ids: Iterable<Long>): Flux<Account> {
@@ -62,9 +67,9 @@ class AccountsService(
 
     fun handleLogin(request: LoginRequest, client: ChatClient): Mono<Account> {
         return accountsRepository.findByUsername(request.username)
-            .orNotFound("account")
+            .orAccountNotFound()
             .handle { account, sink ->
-                if (passwordEncoder.matches(request.password,account.password))
+                if (passwordEncoder.matches(request.password, account.password))
                     sink.next(account)
                 else
                     sink.error(CachedExceptions.passwordNotMatch)

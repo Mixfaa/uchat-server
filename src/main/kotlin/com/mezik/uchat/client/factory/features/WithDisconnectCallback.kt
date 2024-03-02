@@ -25,8 +25,9 @@ internal object DisconnectInterceptor {
 }
 
 class WithDisconnectCallback(
-    private val callback: (ChatClient) -> Unit
+    callback: (ChatClient) -> Unit
 ) : FactoryFeature {
+    private val disconnectCallback = DisconnectCallback(callback)
 
     override val interceptions: List<MethodInterceptionDescription> = listOf(
         MethodInterceptionDescription.Builder()
@@ -49,7 +50,7 @@ class WithDisconnectCallback(
     )
 
     override fun configureInstanceFields(fields: InstanceFieldsConfigurer.InstanceFields) {
-        fields.addField("_disconnect_callback", DisconnectCallback(callback))
+        fields.addField("_disconnect_callback", disconnectCallback)
     }
 
     override fun configureClass(builder: DynamicType.Builder<*>): DynamicType.Builder<*> {

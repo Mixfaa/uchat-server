@@ -1,6 +1,9 @@
 package com.mezik.uchat.shared
 
 import com.mezik.uchat.client.ChatClient
+import com.mezik.uchat.model.database.Account
+import com.mezik.uchat.model.database.Chat
+import com.mezik.uchat.model.database.ChatMessage
 import com.mezik.uchat.model.message.PublicKey
 import com.mezik.uchat.model.message.StatusResponse
 import com.mezik.uchat.model.message.TransactionType
@@ -34,15 +37,19 @@ fun <T> Flux<T>.sendErrorToClient(respFor: TransactionType, client: ChatClient):
 fun PublicKey.asPublicKey(): Result<Key> = runCatching {
     KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(this))
 }
+//
+//fun <T> Mono<T>.orNotFound(subject: String) =
+//    this.switchIfEmpty(Mono.error(NotFoundException(subject)))
+//
+//fun <T> Flux<T>.orNotFound(subject: String) =
+//    this.switchIfEmpty(Mono.error(NotFoundException(subject)))
+//
+//fun <T> Mono<T>.errorIfEmpty(exception: Throwable) =
+//    this.switchIfEmpty(Mono.error(exception))
+//
+//fun <T> Flux<T>.errorIfEmpty(exception: Throwable) =
+//    this.switchIfEmpty(Mono.error(exception))
 
-fun <T> Mono<T>.orNotFound(subject: String) =
-    this.switchIfEmpty(Mono.error(NotFoundException(subject)))
 
-fun <T> Flux<T>.orNotFound(subject: String) =
-    this.switchIfEmpty(Mono.error(NotFoundException(subject)))
 
-fun <T> Mono<T>.errorIfEmpty(exception: Throwable) =
-    this.switchIfEmpty(Mono.error(exception))
 
-fun <T> Flux<T>.errorIfEmpty(exception: Throwable) =
-    this.switchIfEmpty(Mono.error(exception))
