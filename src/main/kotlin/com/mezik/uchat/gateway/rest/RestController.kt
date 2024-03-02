@@ -1,4 +1,4 @@
-package com.mezik.uchat.gateway.socket.rest
+package com.mezik.uchat.gateway.rest
 
 import com.mezik.uchat.model.message.LoginRequest
 import com.mezik.uchat.model.message.RegisterRequest
