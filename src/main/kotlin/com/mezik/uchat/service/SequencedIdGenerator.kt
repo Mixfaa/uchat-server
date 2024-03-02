@@ -1,7 +1,7 @@
 package com.mezik.uchat.service
 
 import com.mezik.uchat.model.database.DatabaseIdSequence
-import com.mezik.uchat.repository.DatabaseIdSeqRepository
+import com.mezik.uchat.service.repository.DatabaseIdSeqRepository
 import org.springframework.stereotype.Service
 
 @Service

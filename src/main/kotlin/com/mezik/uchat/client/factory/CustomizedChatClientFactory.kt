@@ -1,5 +1,6 @@
 package com.mezik.uchat.client.factory
 
+import com.mezik.uchat.client.factory.interfaces.ChatClientFactory
 import com.mezik.uchat.client.factory.interfaces.InstanceFieldsConfigurer
 import com.mezik.uchat.client.rest.RestClient
 import com.mezik.uchat.client.socket.SocketClient
@@ -9,36 +10,40 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.net.Socket
 
 class CustomizedChatClientFactory(
-    private val restClientProxy: Class<out RestClient>,
-    private val socketClientProxy: Class<out SocketClient>,
+    restClientProxy: Class<out RestClient>,
+    socketClientProxy: Class<out SocketClient>,
     private val instanceConfigurators: List<InstanceFieldsConfigurer>,
 
     private val transactionResolver: TransactionResolver
 ) : ChatClientFactory {
+    private val socketClientBuilder = ClassInstanceBuilder(socketClientProxy)
+        .selectConstructor(Socket::class.java, TransactionResolver::class.java)
+
+    private val restClientBuilder = ClassInstanceBuilder(restClientProxy)
+        .selectConstructor(SseEmitter::class.java, TransactionResolver::class.java)
+
     override fun newSocketClient(socket: Socket): SocketClient {
-        val instanceBuilder = ClassInstanceBuilder(socketClientProxy)
-            .selectConstructor(Socket::class.java, TransactionResolver::class.java)
+        socketClientBuilder.clearFields()
 
-        val instanceFields = InstanceFieldsConfigurer.InstanceFields(instanceBuilder)
+        val instanceFields = InstanceFieldsConfigurer.InstanceFields(socketClientBuilder)
 
-        instanceConfigurators.forEach { feature ->
-            feature.configureInstanceFields(instanceFields)
+        instanceConfigurators.forEach {
+            it.configureInstanceFields(instanceFields)
         }
 
-        return instanceBuilder.newInstance(socket, transactionResolver)
+        return socketClientBuilder.newInstance(socket, transactionResolver)
     }
 
     override fun newRestClient(emitter: SseEmitter): RestClient {
-        val instanceBuilder = ClassInstanceBuilder(restClientProxy)
-            .selectConstructor(SseEmitter::class.java, TransactionResolver::class.java)
+        restClientBuilder.clearFields()
 
-        val instanceFields = InstanceFieldsConfigurer.InstanceFields(instanceBuilder)
+        val instanceFields = InstanceFieldsConfigurer.InstanceFields(restClientBuilder)
 
-        instanceConfigurators.forEach { feature ->
-            feature.configureInstanceFields(instanceFields)
+        instanceConfigurators.forEach {
+            it.configureInstanceFields(instanceFields)
         }
 
-        return instanceBuilder.newInstance(emitter, transactionResolver)
+        return restClientBuilder.newInstance(emitter, transactionResolver)
     }
 
     override fun newRestClient(): RestClient {

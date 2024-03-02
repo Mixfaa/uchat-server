@@ -1,7 +1,7 @@
 package com.mezik.uchat.config
 
 import com.mezik.uchat.client.ChatClient
-import com.mezik.uchat.client.factory.ChatClientFactoryConfigurationEvent
+import com.mezik.uchat.client.factory.ChatClientFactoryBuilder
 import com.mezik.uchat.client.factory.features.SimpleMethodInterception
 import com.mezik.uchat.model.message.TransactionBase
 import com.mixfa.bytebuddy_proxy.MethodInterceptionDescription
@@ -29,8 +29,8 @@ internal object SendReceiveLogger {
 }
 
 @Component
-class ClientLoggingConfigurator : ApplicationListener<ChatClientFactoryConfigurationEvent> {
-    override fun onApplicationEvent(event: ChatClientFactoryConfigurationEvent) {
+class ChatClientLoggingConfigurator : ApplicationListener<ChatClientFactoryBuilder.ConfigurationEvent> {
+    override fun onApplicationEvent(event: ChatClientFactoryBuilder.ConfigurationEvent) {
         val sendInterception = MethodInterceptionDescription.Builder()
             .setMatchers(
                 ElementMatchers.named(ChatClient::sendToClient.name),

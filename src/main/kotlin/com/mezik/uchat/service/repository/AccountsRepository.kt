@@ -1,4 +1,4 @@
-package com.mezik.uchat.repository
+package com.mezik.uchat.service.repository
 
 import com.mezik.uchat.model.database.Account
 import org.springframework.data.domain.Pageable

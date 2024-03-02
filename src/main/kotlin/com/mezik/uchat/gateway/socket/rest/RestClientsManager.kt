@@ -1,4 +1,4 @@
-package com.mezik.uchat.rest
+package com.mezik.uchat.gateway.socket.rest
 
 import com.mezik.uchat.client.ChatClient
 import com.mezik.uchat.client.factory.ChatClientFactoryBuilder

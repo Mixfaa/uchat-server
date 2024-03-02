@@ -1,4 +1,4 @@
-package com.mezik.uchat.repository
+package com.mezik.uchat.service.repository
 
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository
 import org.springframework.stereotype.Repository

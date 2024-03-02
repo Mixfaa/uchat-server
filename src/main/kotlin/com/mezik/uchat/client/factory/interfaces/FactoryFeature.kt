@@ -7,8 +7,7 @@ import net.bytebuddy.dynamic.DynamicType
 interface InstanceFieldsConfigurer {
     fun configureInstanceFields(fields: InstanceFields)
 
-    @JvmInline
-    value class InstanceFields(
+    class InstanceFields(
         private val builder: ClassInstanceBuilder<*>
     ) {
         fun addField(fieldName: String, value: Any?) = apply {

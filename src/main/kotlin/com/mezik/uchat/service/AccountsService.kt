@@ -6,7 +6,7 @@ import com.mezik.uchat.model.message.FetchAccountsByIdsRequest
 import com.mezik.uchat.model.message.FetchAccountsRequest
 import com.mezik.uchat.model.message.LoginRequest
 import com.mezik.uchat.model.message.RegisterRequest
-import com.mezik.uchat.repository.AccountsRepository
+import com.mezik.uchat.service.repository.AccountsRepository
 import com.mezik.uchat.shared.CachedExceptions
 import com.mezik.uchat.shared.UsernameTakenException
 import com.mezik.uchat.shared.asPublicKey

@@ -2,8 +2,8 @@ package com.mezik.uchat.service
 
 import com.mezik.uchat.model.database.*
 import com.mezik.uchat.model.message.*
-import com.mezik.uchat.repository.ChatMessagesRepository
-import com.mezik.uchat.repository.ChatsRepository
+import com.mezik.uchat.service.repository.ChatMessagesRepository
+import com.mezik.uchat.service.repository.ChatsRepository
 import com.mezik.uchat.service.results.*
 import com.mezik.uchat.shared.*
 import org.springframework.data.domain.PageRequest
