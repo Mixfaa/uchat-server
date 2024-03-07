@@ -54,6 +54,4 @@ class WithReceiveCallback(
         return builder
             .defineField("_receive_callback", Any::class.java, Visibility.PUBLIC)
     }
-
-
 }
