@@ -1,6 +1,8 @@
 Hardfork with mongodb as database
 Also it is reactive (inside)
 
+Unfortunately, reactive driver for mongodb does not support dbref
+
 Uses encryption by this scheme:
 
 User register with public key and stores his private key ->
